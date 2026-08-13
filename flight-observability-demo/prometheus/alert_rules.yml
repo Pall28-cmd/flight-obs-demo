@@ -1,0 +1,44 @@
+groups:
+  - name: flight-booking-alerts
+    rules:
+      - alert: HighBookingErrorRate
+        expr: >
+          (sum(rate(booking_failures_total[2m])) / clamp_min(sum(rate(flight_bookings_total[2m])), 0.001)) > 0.3
+        for: 30s
+        labels:
+          severity: critical
+          pillar: autohealing
+        annotations:
+          summary: "High booking failure rate detected"
+          description: >
+            Booking failure ratio has exceeded 30% over the last 2 minutes.
+            Mirrors the report's Active Directory auth-cascade / downstream
+            failure pattern. Candidate for auto-remediation per Section 2.
+
+      - alert: PaymentServiceHighLatency
+        expr: >
+          histogram_quantile(0.95, sum(rate(payment_processing_duration_seconds_bucket[2m])) by (le)) > 2
+        for: 30s
+        labels:
+          severity: warning
+          pillar: observability
+        annotations:
+          summary: "Payment service P95 latency exceeds 2s"
+          description: >
+            Payment processing latency has breached SLA threshold.
+            Mirrors the leading-indicator pattern P-01 (resource exhaustion
+            -> connectivity/latency failure, 82% confidence, 15-30 min lead time).
+
+      - alert: FlightSearchHighMemory
+        expr: >
+          process_resident_memory_bytes{job="flight-search-service"} > 300000000
+        for: 30s
+        labels:
+          severity: warning
+          pillar: autohealing
+        annotations:
+          summary: "Flight Search service memory usage abnormally high"
+          description: >
+            Resident memory exceeds 300MB, consistent with the report's
+            Web Proxy resource-exhaustion pattern (Gap G-01, 78 tickets).
+            Candidate 1 auto-remediation: recycle worker process.
