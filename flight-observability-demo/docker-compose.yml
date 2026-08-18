@@ -76,9 +76,21 @@ services:
   prometheus:
     image: prom/prometheus:v2.53.0
     container_name: prometheus
+    # --web.enable-lifecycle allows `curl -XPOST localhost:9090/-/reload` after
+    # editing recording_rules.yml, instead of restarting the container and
+    # losing the in-memory head block.
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+      - "--web.enable-lifecycle"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      # Required: prometheus.yml now lists recording_rules.yml under rule_files.
+      # Without this mount Prometheus exits at startup with
+      # "error loading rules: /etc/prometheus/recording_rules.yml: no such file".
+      - ./prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro
     ports:
       - "9090:9090"
     depends_on:

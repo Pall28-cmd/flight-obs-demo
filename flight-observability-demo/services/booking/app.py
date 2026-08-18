@@ -19,6 +19,9 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
+# SPOG metric registry (new custom business metrics for the Grafana dashboard)
+import metrics as m
+
 SERVICE_NAME = "booking-service"
 OTEL_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4318/v1/traces")
 PAYMENT_SERVICE_URL = os.getenv("PAYMENT_SERVICE_URL", "http://payment-service:8003")
@@ -73,6 +76,10 @@ REQUEST_LATENCY = Histogram(
 BOOKING_TOTAL = Counter("flight_bookings_total", "Total flight bookings", ["status"])
 BOOKING_FAILURES = Counter("booking_failures_total", "Total booking failures", ["reason"])
 
+# Pre-create gauge children so SPOG panels have series from the first scrape.
+m.init_chaos_series()
+m.init_dependency_series()
+
 
 @app.middleware("http")
 async def metrics_middleware(request: Request, call_next):
@@ -103,6 +110,7 @@ chaos_state = {"error_spike": False}
 @app.post("/api/v1/chaos/error-spike/start")
 def start_error_spike():
     chaos_state["error_spike"] = True
+    m.ACTIVE_CHAOS_SIMULATIONS.labels(scenario="error_spike").set(1)
     logger.warning("CHAOS error-spike chaos ENABLED (~50% booking requests will fail)")
     return {
         "status": "error-spike chaos started",
@@ -113,6 +121,7 @@ def start_error_spike():
 @app.post("/api/v1/chaos/error-spike/stop")
 def stop_error_spike():
     chaos_state["error_spike"] = False
+    m.ACTIVE_CHAOS_SIMULATIONS.labels(scenario="error_spike").set(0)
     logger.info("CHAOS error-spike chaos DISABLED")
     return {"status": "error-spike chaos stopped"}
 
@@ -130,56 +139,122 @@ def create_booking(payload: dict):
     global _booking_counter
     flight_id = payload.get("flight_id")
     passenger_name = payload.get("passenger_name", "Guest")
-    amount = payload.get("amount", 0)
+    amount = payload.get("amount", 0) or 0
 
+    # --- Normalise every label value up front (bounded cardinality) ----------
+    route = m.route_for_flight(flight_id)
+    payment_method = m.normalise_payment_method(payload.get("payment_method"))
+    cabin_class = m.normalise_cabin_class(payload.get("cabin_class"))
+    started = time.perf_counter()
+
+    def _record(status_code: str, reason: str | None = None):
+        """Single exit point for all SPOG booking metrics."""
+        m.BOOKING_REQUESTS.labels(
+            route=route,
+            payment_method=payment_method,
+            cabin_class=cabin_class,
+            status_code=status_code,
+        ).inc()
+        m.BOOKING_DURATION.labels(route=route, payment_method=payment_method).observe(
+            time.perf_counter() - started
+        )
+        if reason is None:
+            m.BOOKING_SUCCESS.labels(
+                route=route, payment_method=payment_method, cabin_class=cabin_class
+            ).inc()
+            m.BOOKING_VALUE_INR.labels(route=route, payment_method=payment_method).inc(amount)
+        else:
+            canonical = m.normalise_reason(reason)
+            m.BOOKING_FAILURE.labels(
+                route=route, payment_method=payment_method, reason=canonical
+            ).inc()
+            m.BOOKING_VALUE_AT_RISK_INR.labels(
+                route=route, payment_method=payment_method, reason=canonical
+            ).inc(amount)
+
+    span = trace.get_current_span()
+    span.set_attribute("flight.route", route)
+    span.set_attribute("payment.method", payment_method)
+    span.set_attribute("flight.cabin_class", cabin_class)
+
+    # --- Injected chaos: error spike ---------------------------------------
     if chaos_state["error_spike"] and random.random() < 0.5:
-        BOOKING_FAILURES.labels("simulated_error_spike").inc()
-        BOOKING_TOTAL.labels("failed").inc()
+        m.CHAOS_INJECTIONS.labels(scenario="error_spike").inc()
+        BOOKING_FAILURES.labels("simulated_error_spike").inc()  # legacy
+        BOOKING_TOTAL.labels("failed").inc()                    # legacy
+        _record("500", "chaos_error_spike")
         logger.error(f"Booking failed for flight {flight_id} due to injected chaos error-spike")
         return JSONResponse(status_code=500, content={"error": "Internal booking error (chaos error-spike active)"})
 
+    # --- Seat inventory ----------------------------------------------------
     with tracer.start_as_current_span("check-seat-inventory"):
         available = INVENTORY.get(flight_id, 0)
         if available <= 0:
-            BOOKING_FAILURES.labels("no_seats").inc()
-            BOOKING_TOTAL.labels("failed").inc()
+            BOOKING_FAILURES.labels("no_seats").inc()  # legacy
+            BOOKING_TOTAL.labels("failed").inc()       # legacy
+            _record("409", "no_seats")
             logger.warning(f"Booking rejected for flight {flight_id}: no seats available")
             return JSONResponse(status_code=409, content={"error": "No seats available"})
 
+    # --- Downstream payment call ------------------------------------------
     with tracer.start_as_current_span("call-payment-service"):
         try:
             resp = requests.post(
                 f"{PAYMENT_SERVICE_URL}/api/v1/payments",
-                json={"amount": amount, "flight_id": flight_id},
+                json={
+                    "amount": amount,
+                    "flight_id": flight_id,
+                    "payment_method": payment_method,
+                },
                 timeout=10,
             )
             payment_result = resp.json()
+            m.DOWNSTREAM_DEPENDENCY_UP.labels(dependency="payment-service").set(1)
+        except requests.Timeout as e:
+            m.DOWNSTREAM_DEPENDENCY_UP.labels(dependency="payment-service").set(0)
+            BOOKING_FAILURES.labels("payment_unreachable").inc()  # legacy
+            BOOKING_TOTAL.labels("failed").inc()                  # legacy
+            _record("504", "payment_timeout")
+            logger.error(f"Payment service timed out: {e}")
+            return JSONResponse(status_code=504, content={"error": "Payment service timeout"})
         except Exception as e:
-            BOOKING_FAILURES.labels("payment_unreachable").inc()
-            BOOKING_TOTAL.labels("failed").inc()
+            m.DOWNSTREAM_DEPENDENCY_UP.labels(dependency="payment-service").set(0)
+            BOOKING_FAILURES.labels("payment_unreachable").inc()  # legacy
+            BOOKING_TOTAL.labels("failed").inc()                  # legacy
+            _record("502", "payment_unreachable")
             logger.error(f"Payment service unreachable: {e}")
             return JSONResponse(status_code=502, content={"error": "Payment service unavailable"})
 
     if payment_result.get("status") != "success":
-        BOOKING_FAILURES.labels("payment_declined").inc()
-        BOOKING_TOTAL.labels("failed").inc()
-        logger.warning(f"Payment declined for flight {flight_id}")
+        BOOKING_FAILURES.labels("payment_declined").inc()  # legacy
+        BOOKING_TOTAL.labels("failed").inc()               # legacy
+        _record("402", "payment_declined")
+        logger.warning(f"Payment declined for flight {flight_id} route={route} method={payment_method}")
         return JSONResponse(status_code=402, content={"error": "Payment declined", "detail": payment_result})
 
+    # --- Confirm ----------------------------------------------------------
     INVENTORY[flight_id] = available - 1
+    m.FLIGHT_SEATS_AVAILABLE.labels(flight_id=flight_id, route=route).set(INVENTORY[flight_id])
     _booking_counter += 1
     booking_id = f"BK{1000 + _booking_counter}"
     BOOKINGS[booking_id] = {
         "booking_id": booking_id,
         "flight_id": flight_id,
+        "route": route,
         "passenger_name": passenger_name,
         "amount": amount,
+        "cabin_class": cabin_class,
+        "payment_method": payment_method,
         "status": "confirmed",
         "payment_ref": payment_result.get("payment_id"),
         "created_at": datetime.now(timezone.utc).isoformat(),
     }
-    BOOKING_TOTAL.labels("confirmed").inc()
-    logger.info(f"Booking confirmed: {booking_id} for flight {flight_id}")
+    BOOKING_TOTAL.labels("confirmed").inc()  # legacy
+    _record("201", None)
+    logger.info(
+        f"Booking confirmed: {booking_id} flight={flight_id} route={route} "
+        f"method={payment_method} amount={amount}"
+    )
     return BOOKINGS[booking_id]
 
 

@@ -18,6 +18,9 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
+# SPOG metric registry (new custom business metrics for the Grafana dashboard)
+import metrics as m
+
 SERVICE_NAME = "payment-service"
 OTEL_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4318/v1/traces")
 
@@ -67,6 +70,10 @@ PAYMENT_SUCCESS = Counter("payment_success_total", "Total successful payments")
 PAYMENT_FAILURES = Counter("payment_failures_total", "Total failed payments", ["reason"])
 PAYMENT_DURATION = Histogram("payment_processing_duration_seconds", "Payment processing duration (seconds)")
 
+# Pre-create gauge children so SPOG panels have series from the first scrape.
+m.init_chaos_series()
+m.init_gateway_series()
+
 
 @app.middleware("http")
 async def metrics_middleware(request: Request, call_next):
@@ -91,6 +98,7 @@ chaos_state = {"latency": False}
 @app.post("/api/v1/chaos/latency/start")
 def start_latency_chaos():
     chaos_state["latency"] = True
+    m.ACTIVE_CHAOS_SIMULATIONS.labels(scenario="latency").set(1)
     logger.warning("CHAOS latency chaos ENABLED (3-5s delay injected per payment)")
     return {
         "status": "latency chaos started (3-5s delay injected)",
@@ -101,6 +109,7 @@ def start_latency_chaos():
 @app.post("/api/v1/chaos/latency/stop")
 def stop_latency_chaos():
     chaos_state["latency"] = False
+    m.ACTIVE_CHAOS_SIMULATIONS.labels(scenario="latency").set(0)
     logger.info("CHAOS latency chaos DISABLED")
     return {"status": "latency chaos stopped"}
 
@@ -112,31 +121,74 @@ def chaos_status():
 
 @app.post("/api/v1/payments")
 def process_payment(payload: dict):
-    amount = payload.get("amount", 0)
+    amount = payload.get("amount", 0) or 0
     flight_id = payload.get("flight_id")
+    payment_method = m.normalise_payment_method(payload.get("payment_method"))
+    gateway = m.GATEWAY_NAME
     start = time.time()
 
-    with tracer.start_as_current_span("process-payment-gateway-call"):
-        if chaos_state["latency"]:
-            delay = random.uniform(3, 5)
-            logger.warning(f"CHAOS latency injected: sleeping {delay:.2f}s")
-            time.sleep(delay)
-        else:
-            time.sleep(random.uniform(0.05, 0.2))
+    m.PAYMENT_IN_FLIGHT.labels(gateway=gateway).inc()
+    try:
+        with tracer.start_as_current_span("process-payment-gateway-call") as span:
+            span.set_attribute("payment.method", payment_method)
+            span.set_attribute("payment.gateway", gateway)
 
-        success = random.random() < 0.92  # ~92% baseline success rate
-        duration = time.time() - start
-        PAYMENT_DURATION.observe(duration)
+            if chaos_state["latency"]:
+                delay = random.uniform(3, 5)
+                m.CHAOS_INJECTIONS.labels(scenario="latency").inc()
+                logger.warning(f"CHAOS latency injected: sleeping {delay:.2f}s")
+                time.sleep(delay)
+            else:
+                time.sleep(random.uniform(0.05, 0.2))
 
-        if not success:
-            PAYMENT_FAILURES.labels("gateway_declined").inc()
-            logger.error(f"Payment declined for flight {flight_id}, amount {amount}")
-            return {"status": "failed", "reason": "gateway_declined"}
+            success = random.random() < 0.92  # ~92% baseline success rate
+            duration = time.time() - start
+            PAYMENT_DURATION.observe(duration)  # legacy
 
-        payment_id = f"PAY-{uuid.uuid4().hex[:10]}"
-        PAYMENT_SUCCESS.inc()
-        logger.info(f"Payment {payment_id} succeeded for flight {flight_id}, amount {amount}")
-        return {"status": "success", "payment_id": payment_id, "amount": amount}
+            if not success:
+                decline_reason = random.choices(
+                    ["gateway_declined", "insufficient_funds", "risk_rejected", "invalid_instrument"],
+                    weights=[0.5, 0.25, 0.15, 0.10],
+                )[0]
+                PAYMENT_FAILURES.labels("gateway_declined").inc()  # legacy
+                m.PAYMENT_GATEWAY_LATENCY.labels(
+                    payment_method=payment_method, gateway=gateway, status="declined"
+                ).observe(duration)
+                m.PAYMENT_TRANSACTIONS.labels(
+                    payment_method=payment_method,
+                    gateway=gateway,
+                    status="declined",
+                    decline_reason=decline_reason,
+                ).inc()
+                m.PAYMENT_AMOUNT_DECLINED_INR.labels(
+                    payment_method=payment_method, gateway=gateway, decline_reason=decline_reason
+                ).inc(amount)
+                span.set_attribute("payment.decline_reason", decline_reason)
+                logger.error(
+                    f"Payment declined for flight {flight_id} amount={amount} "
+                    f"method={payment_method} reason={decline_reason} latency={duration:.3f}s"
+                )
+                return {"status": "failed", "reason": decline_reason}
+
+            payment_id = f"PAY-{uuid.uuid4().hex[:10]}"
+            PAYMENT_SUCCESS.inc()  # legacy
+            m.PAYMENT_GATEWAY_LATENCY.labels(
+                payment_method=payment_method, gateway=gateway, status="success"
+            ).observe(duration)
+            m.PAYMENT_TRANSACTIONS.labels(
+                payment_method=payment_method,
+                gateway=gateway,
+                status="success",
+                decline_reason="none",
+            ).inc()
+            m.PAYMENT_AMOUNT_INR.labels(payment_method=payment_method, gateway=gateway).inc(amount)
+            logger.info(
+                f"Payment {payment_id} succeeded for flight {flight_id} amount={amount} "
+                f"method={payment_method} latency={duration:.3f}s"
+            )
+            return {"status": "success", "payment_id": payment_id, "amount": amount}
+    finally:
+        m.PAYMENT_IN_FLIGHT.labels(gateway=gateway).dec()
 
 
 @app.get("/health")

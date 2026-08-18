@@ -17,6 +17,9 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 
+# SPOG metric registry (new custom business metrics for the Grafana dashboard)
+import metrics as m
+
 SERVICE_NAME = "flight-search-service"
 OTEL_ENDPOINT = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4318/v1/traces")
 
@@ -73,6 +76,10 @@ REQUEST_LATENCY = Histogram(
 )
 SEARCH_COUNT = Counter("flight_search_total", "Total flight searches", ["origin", "destination"])
 
+# Pre-create the chaos gauge children so the SPOG "Active Chaos Simulations"
+# panel has a series to read from the very first scrape.
+m.init_chaos_series()
+
 
 @app.middleware("http")
 async def metrics_middleware(request: Request, call_next):
@@ -107,6 +114,7 @@ chaos_state = {"memory_leak": False}
 def _leak_worker():
     while chaos_state["memory_leak"]:
         _leak_store.append(bytearray(10 * 1024 * 1024))  # allocate 10MB
+        m.CHAOS_INJECTIONS.labels(scenario="memory_leak").inc()
         logger.warning(
             f"CHAOS memory-leak active: allocated 10MB block, total_blocks={len(_leak_store)}"
         )
@@ -117,6 +125,7 @@ def _leak_worker():
 def start_memory_leak():
     if not chaos_state["memory_leak"]:
         chaos_state["memory_leak"] = True
+        m.ACTIVE_CHAOS_SIMULATIONS.labels(scenario="memory_leak").set(1)
         threading.Thread(target=_leak_worker, daemon=True).start()
         logger.warning("CHAOS memory-leak chaos ENABLED")
     return {
@@ -129,6 +138,7 @@ def start_memory_leak():
 def stop_memory_leak():
     chaos_state["memory_leak"] = False
     _leak_store.clear()
+    m.ACTIVE_CHAOS_SIMULATIONS.labels(scenario="memory_leak").set(0)
     logger.info("CHAOS memory-leak chaos DISABLED, memory released")
     return {"status": "memory-leak chaos stopped, memory released"}
 
@@ -142,17 +152,45 @@ def chaos_status():
 # Core endpoints
 # ---------------------------------------------------------------------------
 @app.get("/api/v1/flights/search")
-def search_flights(origin: str = None, destination: str = None):
-    with tracer.start_as_current_span("search-flights-db-query"):
-        time.sleep(0.05)  # simulate DB/cache round-trip
-        results = FLIGHTS
-        if origin:
-            results = [f for f in results if f["origin"].upper() == origin.upper()]
-        if destination:
-            results = [f for f in results if f["destination"].upper() == destination.upper()]
-        SEARCH_COUNT.labels(origin or "any", destination or "any").inc()
-        logger.info(f"Flight search executed origin={origin} destination={destination} results={len(results)}")
-        return {"count": len(results), "flights": results}
+def search_flights(origin: str = None, destination: str = None, cabin_class: str = None):
+    route = m.normalise_route(origin, destination)
+    cabin = m.normalise_cabin_class(cabin_class)
+    started = time.perf_counter()
+    status_code = "200"
+
+    try:
+        with tracer.start_as_current_span("search-flights-db-query") as span:
+            span.set_attribute("flight.route", route)
+            span.set_attribute("flight.cabin_class", cabin)
+
+            time.sleep(0.05)  # simulate DB/cache round-trip
+            results = FLIGHTS
+            if origin:
+                results = [f for f in results if f["origin"].upper() == origin.upper()]
+            if destination:
+                results = [f for f in results if f["destination"].upper() == destination.upper()]
+
+            SEARCH_COUNT.labels(origin or "any", destination or "any").inc()  # legacy
+            m.FLIGHT_SEARCH_RESULTS.labels(route=route).observe(len(results))
+            if not results:
+                m.FLIGHT_SEARCH_ZERO_RESULTS.labels(route=route, cabin_class=cabin).inc()
+
+            logger.info(
+                f"Flight search executed route={route} cabin_class={cabin} "
+                f"origin={origin} destination={destination} results={len(results)}"
+            )
+            return {"count": len(results), "flights": results}
+    except Exception:
+        status_code = "500"
+        logger.exception(f"Flight search failed route={route}")
+        raise
+    finally:
+        m.FLIGHT_SEARCH_REQUESTS.labels(
+            route=route, cabin_class=cabin, status_code=status_code
+        ).inc()
+        m.FLIGHT_SEARCH_DURATION.labels(route=route, cabin_class=cabin).observe(
+            time.perf_counter() - started
+        )
 
 
 @app.get("/api/v1/flights/{flight_id}")
