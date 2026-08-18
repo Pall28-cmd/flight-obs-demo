@@ -1,0 +1,137 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Total Confirmed Bookings",
+      "id": 1,
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(flight_bookings_total{status=\"confirmed\"})", "refId": "A" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Payment Failures (Total)",
+      "id": 2,
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(payment_failures_total)", "refId": "A" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Booking Failure Rate (2m)",
+      "id": 3,
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(booking_failures_total[2m])) / clamp_min(sum(rate(flight_bookings_total[2m])), 0.001)", "refId": "A" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Flight Search Memory (RSS)",
+      "id": 4,
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "process_resident_memory_bytes{job=\"flight-search-service\"}", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Request Rate by Service (RED: Rate)",
+      "id": 5,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(http_requests_total[1m])) by (service)", "refId": "A", "legendFormat": "{{service}}" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Error Rate by Service (RED: Errors)",
+      "id": 6,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(http_requests_total{status=~\"5..\"}[1m])) by (service)", "refId": "A", "legendFormat": "{{service}}" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "P95 Latency by Service (RED: Duration)",
+      "id": 7,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[2m])) by (le, service))", "refId": "A", "legendFormat": "{{service}}" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Payment Processing Duration (P95)",
+      "id": 8,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "histogram_quantile(0.95, sum(rate(payment_processing_duration_seconds_bucket[2m])) by (le))", "refId": "A", "legendFormat": "P95 payment latency" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Flight Search Memory Usage (Chaos: memory-leak)",
+      "id": 9,
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "process_resident_memory_bytes{job=\"flight-search-service\"}", "refId": "A", "legendFormat": "flight-search RSS" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Business Metrics: Bookings vs Payment Failures",
+      "id": 10,
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(flight_bookings_total[1m])) by (status)", "refId": "A", "legendFormat": "bookings: {{status}}" },
+        { "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "sum(rate(payment_failures_total[1m])) by (reason)", "refId": "B", "legendFormat": "payment fail: {{reason}}" }
+      ]
+    },
+    {
+      "type": "logs",
+      "title": "Live Structured JSON Logs (all services) — correlated via trace_id",
+      "id": 11,
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 26 },
+      "datasource": { "type": "loki", "uid": "loki" },
+      "targets": [
+        { "datasource": { "type": "loki", "uid": "loki" }, "expr": "{service=~\".+\"}", "refId": "A" }
+      ]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "tags": ["observability", "flight-booking", "demo"],
+  "templating": { "list": [] },
+  "time": { "from": "now-15m", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Flight Booking — Observability Dashboard",
+  "uid": "flight-booking-observability",
+  "version": 1,
+  "weekStart": ""
+}

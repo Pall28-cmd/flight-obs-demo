@@ -1,0 +1,156 @@
+# ---------------------------------------------------------------------------
+# Recording rules backing the SPOG Leadership panels.
+#
+# Why these exist: the Leadership KPIs (IT Health Score, availability, Apdex,
+# booking success rate) are composite expressions. Inlining them into panel
+# queries makes the dashboard JSON unreadable and means a definition change has
+# to be applied in a dozen places. Pre-computing them here gives one
+# authoritative definition per KPI, cheap panel queries, and a name you can
+# alert on.
+#
+# Naming convention: <namespace>:<metric>:<aggregation><window>
+#   svc:   per-service technical SLI
+#   slo:   service level objective / error budget
+#   biz:   business outcome
+#   spog:  composite estate-level score shown on the executive row
+#
+# Windows are fixed at 5m deliberately. Leadership panels should not wobble with
+# an ad-hoc $rate_window; the SRE rows use raw PromQL with $rate_window instead.
+#
+# Apdex note: T = 0.25s, tolerating threshold 4T = 1.0s. Both are exact bucket
+# boundaries in prometheus_client's default histogram buckets, so no
+# interpolation is needed. Verify the `le` label formatting on your build with:
+#   count by (le) (http_request_duration_seconds_bucket)
+# and confirm "0.25" and "1.0" appear literally.
+# ---------------------------------------------------------------------------
+groups:
+  # -------------------------------------------------------------------------
+  - name: spog_service_sli
+    interval: 15s
+    rules:
+      - record: svc:http_requests:rate5m
+        expr: sum by (environment, service_name) (rate(http_requests_total[5m]))
+
+      - record: svc:http_errors:rate5m
+        expr: sum by (environment, service_name) (rate(http_requests_total{status=~"5.."}[5m]))
+
+      - record: svc:availability:ratio5m
+        expr: >
+          1 - (
+            svc:http_errors:rate5m
+            / clamp_min(svc:http_requests:rate5m, 0.001)
+          )
+
+      - record: svc:latency_p50:seconds5m
+        expr: >
+          histogram_quantile(0.50,
+            sum by (environment, service_name, le) (rate(http_request_duration_seconds_bucket[5m]))
+          )
+
+      - record: svc:latency_p95:seconds5m
+        expr: >
+          histogram_quantile(0.95,
+            sum by (environment, service_name, le) (rate(http_request_duration_seconds_bucket[5m]))
+          )
+
+      - record: svc:latency_p99:seconds5m
+        expr: >
+          histogram_quantile(0.99,
+            sum by (environment, service_name, le) (rate(http_request_duration_seconds_bucket[5m]))
+          )
+
+      # Apdex_0.25 = (satisfied + tolerating/2) / total, algebraically equal to
+      # (bucket_le_0.25 + bucket_le_1.0) / (2 * total).
+      - record: svc:apdex:ratio5m
+        expr: >
+          (
+            sum by (environment, service_name) (rate(http_request_duration_seconds_bucket{le="0.25"}[5m]))
+            +
+            sum by (environment, service_name) (rate(http_request_duration_seconds_bucket{le="1.0"}[5m]))
+          )
+          / (2 * clamp_min(
+            sum by (environment, service_name) (rate(http_request_duration_seconds_count[5m])), 0.001
+          ))
+
+  # -------------------------------------------------------------------------
+  - name: spog_slo
+    interval: 30s
+    rules:
+      # Availability SLO 99.5% => error budget 0.5% of requests, i.e. the
+      # 0.005 divisor below. Change it in both rules if the SLO changes.
+      - record: slo:error_budget_burn_rate:ratio1h
+        expr: >
+          (
+            sum by (environment, service_name) (rate(http_requests_total{status=~"5.."}[1h]))
+            / clamp_min(sum by (environment, service_name) (rate(http_requests_total[1h])), 0.001)
+          ) / 0.005
+
+      - record: slo:error_budget_remaining:ratio30d
+        expr: >
+          clamp_min(
+            1 - (
+              (
+                sum by (environment, service_name) (increase(http_requests_total{status=~"5.."}[30d]))
+                / clamp_min(sum by (environment, service_name) (increase(http_requests_total[30d])), 1)
+              ) / 0.005
+            ), 0)
+
+  # -------------------------------------------------------------------------
+  - name: spog_business
+    interval: 15s
+    rules:
+      - record: biz:flight_searches:rate5m
+        expr: sum by (environment) (rate(flight_search_requests_total[5m]))
+
+      - record: biz:booking_attempts:rate5m
+        expr: sum by (environment) (rate(booking_requests_total[5m]))
+
+      - record: biz:bookings_confirmed:rate5m
+        expr: sum by (environment) (rate(booking_success_total[5m]))
+
+      - record: biz:booking_success:ratio5m
+        expr: >
+          biz:bookings_confirmed:rate5m
+          / clamp_min(biz:booking_attempts:rate5m, 0.001)
+
+      # Search-to-book conversion: the funnel KPI the executive row leads with.
+      - record: biz:search_to_book:ratio5m
+        expr: >
+          biz:bookings_confirmed:rate5m
+          / clamp_min(biz:flight_searches:rate5m, 0.001)
+
+      - record: biz:revenue_inr:rate5m
+        expr: sum by (environment) (rate(booking_value_inr_total[5m]))
+
+      - record: biz:revenue_at_risk_inr:rate5m
+        expr: sum by (environment) (rate(booking_value_at_risk_inr_total[5m]))
+
+      - record: biz:payment_success:ratio5m
+        expr: >
+          sum by (environment) (rate(payment_transactions_total{status="success"}[5m]))
+          / clamp_min(sum by (environment) (rate(payment_transactions_total[5m])), 0.001)
+
+      - record: biz:payment_gateway_p95:seconds5m
+        expr: >
+          histogram_quantile(0.95,
+            sum by (environment, le) (rate(payment_gateway_latency_seconds_bucket[5m]))
+          )
+
+  # -------------------------------------------------------------------------
+  - name: spog_composite
+    interval: 30s
+    rules:
+      # Estate-level IT Health Score, 0-100.
+      #   40% technical availability, 30% user-perceived Apdex,
+      #   30% business booking success.
+      # Weights are a starting point -- agree them with Manish and the service
+      # owners before this number goes in front of leadership, because a single
+      # composite invites "why is it 78" questions that the weighting has to be
+      # able to answer.
+      - record: spog:it_health_score
+        expr: >
+          100 * (
+            0.4 * avg by (environment) (svc:availability:ratio5m)
+            + 0.3 * avg by (environment) (svc:apdex:ratio5m)
+            + 0.3 * biz:booking_success:ratio5m
+          )

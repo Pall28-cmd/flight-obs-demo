@@ -1,0 +1,153 @@
+groups:
+  - name: flight-booking-alerts
+    rules:
+      - alert: HighBookingErrorRate
+        expr: >
+          (sum(rate(booking_failures_total[2m])) / clamp_min(sum(rate(flight_bookings_total[2m])), 0.001)) > 0.3
+        for: 30s
+        labels:
+          severity: critical
+          pillar: autohealing
+        annotations:
+          summary: "High booking failure rate detected"
+          description: >
+            Booking failure ratio has exceeded 30% over the last 2 minutes.
+            Mirrors the report's Active Directory auth-cascade / downstream
+            failure pattern. Candidate for auto-remediation per Section 2.
+
+      - alert: PaymentServiceHighLatency
+        expr: >
+          histogram_quantile(0.95, sum(rate(payment_processing_duration_seconds_bucket[2m])) by (le)) > 2
+        for: 30s
+        labels:
+          severity: warning
+          pillar: observability
+        annotations:
+          summary: "Payment service P95 latency exceeds 2s"
+          description: >
+            Payment processing latency has breached SLA threshold.
+            Mirrors the leading-indicator pattern P-01 (resource exhaustion
+            -> connectivity/latency failure, 82% confidence, 15-30 min lead time).
+
+      - alert: FlightSearchHighMemory
+        expr: >
+          process_resident_memory_bytes{job="flight-search-service"} > 300000000
+        for: 30s
+        labels:
+          severity: warning
+          pillar: autohealing
+        annotations:
+          summary: "Flight Search service memory usage abnormally high"
+          description: >
+            Resident memory exceeds 300MB, consistent with the report's
+            Web Proxy resource-exhaustion pattern (Gap G-01, 78 tickets).
+            Candidate 1 auto-remediation: recycle worker process.
+
+  # -------------------------------------------------------------------------
+  # SPOG alerts. These consume the recording rules in recording_rules.yml so
+  # the alert threshold and the dashboard panel read from the same definition
+  # and cannot drift apart.
+  # -------------------------------------------------------------------------
+  - name: spog-slo-alerts
+    rules:
+      - alert: ErrorBudgetFastBurn
+        expr: slo:error_budget_burn_rate:ratio1h > 14.4
+        for: 2m
+        labels:
+          severity: critical
+          pillar: slo
+        annotations:
+          summary: "{{ $labels.service_name }} burning error budget 14.4x too fast"
+          description: >
+            At this rate 2% of the 30-day availability budget is consumed in one
+            hour. Standard multi-window fast-burn page. Panel: SRE row,
+            "Error Budget Burn Rate".
+
+      - alert: ErrorBudgetExhausted
+        expr: slo:error_budget_remaining:ratio30d < 0.1
+        for: 10m
+        labels:
+          severity: warning
+          pillar: slo
+        annotations:
+          summary: "{{ $labels.service_name }} has under 10% error budget left"
+          description: >
+            Freeze non-essential change for this service until the budget
+            recovers. Panel: SRE row, "Error Budget Remaining (30d)".
+
+      - alert: ApdexDegraded
+        expr: svc:apdex:ratio5m < 0.85
+        for: 5m
+        labels:
+          severity: warning
+          pillar: observability
+        annotations:
+          summary: "{{ $labels.service_name }} Apdex below 0.85"
+          description: >
+            User-perceived responsiveness has degraded (T=0.25s). Check the
+            Latency P50/P95/P99 panel for which quantile moved.
+
+  - name: spog-business-alerts
+    rules:
+      - alert: BookingSuccessRateLow
+        expr: biz:booking_success:ratio5m < 0.90
+        for: 5m
+        labels:
+          severity: critical
+          pillar: business
+        annotations:
+          summary: "Booking success rate below 90%"
+          description: >
+            Revenue-impacting. Check "Booking Outcome Mix" for the dominant
+            failure reason before escalating -- reason=no_seats is expected
+            business behaviour, not an outage.
+
+      - alert: RevenueAtRiskElevated
+        expr: 3600 * biz:revenue_at_risk_inr:rate5m > 60000
+        for: 5m
+        labels:
+          severity: warning
+          pillar: business
+        annotations:
+          summary: "Revenue at risk above Rs.60k/hr"
+          description: >
+            Failed booking attempts are concentrating on high-value bookings.
+            Panel: Leadership row, "Revenue at Risk".
+
+      - alert: PaymentGatewayLatencyBreach
+        expr: biz:payment_gateway_p95:seconds5m > 2
+        for: 3m
+        labels:
+          severity: warning
+          pillar: observability
+        annotations:
+          summary: "Payment gateway P95 latency above 2s"
+          description: >
+            Confirm active_chaos_simulations{scenario="latency"} is 0 before
+            treating this as a genuine gateway problem.
+
+      - alert: SearchToBookConversionDrop
+        expr: biz:search_to_book:ratio5m < 0.10
+        for: 15m
+        labels:
+          severity: warning
+          pillar: business
+        annotations:
+          summary: "Search-to-book conversion below 10%"
+          description: >
+            Traffic is arriving but not converting. If availability and Apdex are
+            both green this is a product/UX or inventory problem, not reliability.
+
+  - name: spog-chaos-guard
+    rules:
+      - alert: ChaosExperimentRunningTooLong
+        expr: active_chaos_simulations > 0
+        for: 30m
+        labels:
+          severity: warning
+          pillar: governance
+        annotations:
+          summary: "Chaos scenario {{ $labels.scenario }} active for over 30 minutes"
+          description: >
+            Chaos left running masks real incidents and skews every SLI on the
+            dashboard. Stop it via the /api/v1/chaos/*/stop endpoint.

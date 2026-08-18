@@ -1,0 +1,35 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker-containers
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+    relabel_configs:
+      - source_labels: ["__meta_docker_container_name"]
+        regex: "/(.*)"
+        target_label: "container"
+
+      # `service` is the compose service name. It happens to match the
+      # SERVICE_NAME constant in each app (flight-search-service, etc.), which is
+      # why the dashboard's $service variable -- populated from the Prometheus
+      # `service_name` target label -- can be reused directly in Loki stream
+      # selectors. If you rename a compose service, rename it in prometheus.yml
+      # too or the two halves of the dashboard will disagree.
+      - source_labels: ["__meta_docker_container_label_com_docker_compose_service"]
+        target_label: "service"
+
+      # Constant label so Loki queries can filter by environment exactly like
+      # the Prometheus panels do. A relabel rule with no source_labels writes a
+      # literal value. Keep this in sync with the `environment` target labels in
+      # prometheus.yml.
+      - target_label: "environment"
+        replacement: "dev"

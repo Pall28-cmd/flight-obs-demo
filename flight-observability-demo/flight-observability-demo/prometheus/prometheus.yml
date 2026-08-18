@@ -1,0 +1,58 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+  external_labels:
+    cluster: flight-booking-local
+
+rule_files:
+  - /etc/prometheus/alert_rules.yml
+  - /etc/prometheus/recording_rules.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+# ---------------------------------------------------------------------------
+# TARGET LABELS -- this is what makes the $service and $environment dashboard
+# variables work.
+#
+# `service_name` and `environment` are attached here at scrape time rather than
+# inside the application code. Prometheus target labels win over labels exported
+# by the app: if a service also emitted `service_name` on a metric, Prometheus
+# would rename the app's copy to `exported_service_name` and every
+# `service_name=~"$service"` selector in the dashboard would silently return
+# nothing. Defining topology once, here, keeps a single source of truth and
+# applies it uniformly to every metric a target exposes -- including the
+# python_* and process_* metrics prometheus_client adds for free.
+#
+# To add a second environment, duplicate a job block with a different
+# `environment` value and new targets.
+# ---------------------------------------------------------------------------
+scrape_configs:
+  - job_name: "flight-search-service"
+    static_configs:
+      - targets: ["flight-search-service:8001"]
+        labels:
+          service_name: flight-search-service
+          environment: dev
+          tier: frontend
+          business_service: flight-search
+
+  - job_name: "booking-service"
+    static_configs:
+      - targets: ["booking-service:8002"]
+        labels:
+          service_name: booking-service
+          environment: dev
+          tier: application
+          business_service: booking
+
+  - job_name: "payment-service"
+    static_configs:
+      - targets: ["payment-service:8003"]
+        labels:
+          service_name: payment-service
+          environment: dev
+          tier: application
+          business_service: payment

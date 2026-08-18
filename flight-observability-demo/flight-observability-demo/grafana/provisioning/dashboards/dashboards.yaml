@@ -1,0 +1,36 @@
+# ---------------------------------------------------------------------------
+# Grafana dashboard provisioning.
+#
+# ⚠ IMPORTANT: delete the old `dashboards.yml` from this directory before
+# starting. Grafana reads every .yml and .yaml file here, and two providers
+# pointing at the same path will both try to own the same dashboard uid,
+# producing "dashboard with the same uid already exists" on every reload.
+#
+#   rm grafana/provisioning/dashboards/dashboards.yml
+#
+# Any *.json file under options.path is imported on startup and re-read every
+# updateIntervalSeconds. The dashboard's own `uid` field (flight-booking-spog)
+# is the identity Grafana keys on -- not the filename.
+# ---------------------------------------------------------------------------
+apiVersion: 1
+
+providers:
+  - name: "flight-booking-spog"
+    orgId: 1
+    # Empty string = the General folder. Set a folder name to group dashboards;
+    # with foldersFromFilesStructure below it is derived from subdirectories.
+    folder: "Flight Booking"
+    folderUid: "flight-booking"
+    type: file
+    # false lets an operator delete a dashboard from the UI without it being
+    # silently re-created on the next reload. Set true to make the files
+    # authoritative and the UI read-only in practice.
+    disableDeletion: false
+    # allowUiUpdates: true lets people iterate in the UI. Anything they save is
+    # overwritten the next time the JSON file changes, so treat the file as the
+    # source of truth and export from the UI back into git when you are happy.
+    allowUiUpdates: true
+    updateIntervalSeconds: 30
+    options:
+      path: /etc/grafana/provisioning/dashboards/json
+      foldersFromFilesStructure: false

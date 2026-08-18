@@ -1,0 +1,12 @@
+route:
+  receiver: default
+  group_by: ["alertname"]
+  group_wait: 10s
+  group_interval: 30s
+  repeat_interval: 5m
+
+receivers:
+  - name: default
+    # No external notification channel configured for this local demo.
+    # Alerts are visible in the Prometheus "Alerts" tab and Alertmanager UI
+    # (http://localhost:9093), and can be surfaced in Grafana as well.

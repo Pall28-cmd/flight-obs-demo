@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Flight Booking Observability Demo</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    margin: 0; background: #0f1420; color: #e6e9f0;
+  }
+  header {
+    padding: 20px 32px; background: #141a2b; border-bottom: 1px solid #262f45;
+  }
+  header h1 { margin: 0; font-size: 20px; }
+  header p { margin: 4px 0 0; color: #8b93a7; font-size: 13px; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 32px 60px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .card {
+    background: #141a2b; border: 1px solid #262f45; border-radius: 10px;
+    padding: 20px; margin-bottom: 20px;
+  }
+  .card h2 { margin-top: 0; font-size: 16px; color: #f0f2f8; }
+  .card h2 .tag { font-size: 11px; color: #8b93a7; font-weight: normal; }
+  label { font-size: 12px; color: #8b93a7; display: block; margin-bottom: 4px; }
+  input, select {
+    width: 100%; padding: 8px 10px; margin-bottom: 12px; border-radius: 6px;
+    border: 1px solid #2d3650; background: #0f1420; color: #e6e9f0; font-size: 13px;
+  }
+  button {
+    padding: 9px 16px; border: none; border-radius: 6px; cursor: pointer;
+    font-size: 13px; font-weight: 600; margin-right: 8px; margin-bottom: 8px;
+  }
+  .btn-primary { background: #3b82f6; color: white; }
+  .btn-danger { background: #ef4444; color: white; }
+  .btn-muted { background: #262f45; color: #cdd3e0; }
+  .row { display: flex; gap: 10px; }
+  .row > * { flex: 1; }
+  #results, #bookingResult { margin-top: 8px; font-size: 13px; }
+  .flight-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px; border: 1px solid #262f45; border-radius: 6px; margin-bottom: 8px;
+    background: #0f1420;
+  }
+  .flight-item small { color: #8b93a7; display: block; }
+  pre {
+    background: #0a0e17; padding: 10px; border-radius: 6px; font-size: 12px;
+    overflow-x: auto; color: #9fd28a; white-space: pre-wrap; word-break: break-all;
+  }
+  .chaos-desc { font-size: 12px; color: #8b93a7; margin-bottom: 10px; line-height: 1.5; }
+  .status-badge {
+    display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 10px;
+    margin-left: 6px; background: #262f45; color: #8b93a7;
+  }
+  .status-active { background: #7f1d1d; color: #fca5a5; }
+  .links a {
+    color: #60a5fa; text-decoration: none; font-size: 13px; margin-right: 16px;
+  }
+  .links a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>✈️ Flight Booking Microservices — Observability Demo</h1>
+  <p>Flight Search (8001) → Booking &amp; Inventory (8002) → Payment Gateway (8003), via NGINX Gateway (8000)</p>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <div class="links">
+      <a href="http://localhost:3000" target="_blank">📊 Grafana (admin/admin)</a>
+      <a href="http://localhost:16686" target="_blank">🔍 Jaeger Traces</a>
+      <a href="http://localhost:9090" target="_blank">📈 Prometheus</a>
+      <a href="http://localhost:9090/alerts" target="_blank">🚨 Prometheus Alerts</a>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <!-- Flight Search -->
+    <div class="card">
+      <h2>1. Search Flights <span class="tag">flight-search-service :8001</span></h2>
+      <div class="row">
+        <div>
+          <label>Origin</label>
+          <select id="origin">
+            <option value="">Any</option>
+            <option>DEL</option><option>BOM</option><option>BLR</option>
+          </select>
+        </div>
+        <div>
+          <label>Destination</label>
+          <select id="destination">
+            <option value="">Any</option>
+            <option>BOM</option><option>BLR</option><option>DEL</option><option>HYD</option><option>GOI</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="searchFlights()">Search Flights</button>
+      <div id="results"></div>
+    </div>
+
+    <!-- Booking -->
+    <div class="card">
+      <h2>2. Book a Flight <span class="tag">booking-service :8002 → payment-service :8003</span></h2>
+      <label>Flight ID</label>
+      <input id="flightId" placeholder="e.g. FL100" />
+      <label>Passenger Name</label>
+      <input id="passengerName" placeholder="e.g. Priya Sharma" />
+      <label>Amount (₹)</label>
+      <input id="amount" type="number" placeholder="e.g. 4500" />
+      <button class="btn-primary" onclick="bookFlight()">Book Flight</button>
+      <div id="bookingResult"></div>
+    </div>
+
+  </div>
+
+  <div class="card">
+    <h2>⚡ Chaos / Fault Injection Control Panel</h2>
+    <p class="chaos-desc">Each scenario is mapped to a real pattern from the ticket-analysis strategy report. Trigger one, then watch Grafana / Prometheus alerts / Jaeger react in real time.</p>
+
+    <div class="grid">
+      <div>
+        <strong>Memory Leak</strong> <span class="status-badge" id="badge-memory">off</span>
+        <p class="chaos-desc">Gradually consumes RAM on Flight Search Service. Mirrors <b>Web Proxy resource-exhaustion pattern (Gap G-01, 78 tickets)</b>.</p>
+        <button class="btn-danger" onclick="triggerChaos('flight-search','memory-leak','start')">Start</button>
+        <button class="btn-muted" onclick="triggerChaos('flight-search','memory-leak','stop')">Stop</button>
+      </div>
+      <div>
+        <strong>Error Spike</strong> <span class="status-badge" id="badge-error">off</span>
+        <p class="chaos-desc">50% of booking requests return HTTP 500. Mirrors <b>Active Directory auth-cascade / downstream failure pattern</b>.</p>
+        <button class="btn-danger" onclick="triggerChaos('booking','error-spike','start')">Start</button>
+        <button class="btn-muted" onclick="triggerChaos('booking','error-spike','stop')">Stop</button>
+      </div>
+      <div>
+        <strong>Payment Latency</strong> <span class="status-badge" id="badge-latency">off</span>
+        <p class="chaos-desc">Injects 3-5s delay into every payment call. Mirrors <b>resource-exhaustion → latency-degradation leading-indicator pattern (P-01, 82% confidence)</b>.</p>
+        <button class="btn-danger" onclick="triggerChaos('payment','latency','start')">Start</button>
+        <button class="btn-muted" onclick="triggerChaos('payment','latency','stop')">Stop</button>
+      </div>
+    </div>
+    <pre id="chaosLog">Chaos action log will appear here...</pre>
+  </div>
+
+</div>
+
+<script>
+async function searchFlights() {
+  const origin = document.getElementById('origin').value;
+  const destination = document.getElementById('destination').value;
+  const params = new URLSearchParams();
+  if (origin) params.append('origin', origin);
+  if (destination) params.append('destination', destination);
+  const res = await fetch('/api/flights/search?' + params.toString());
+  const data = await res.json();
+  const el = document.getElementById('results');
+  if (!data.flights || data.flights.length === 0) {
+    el.innerHTML = '<p>No flights found.</p>';
+    return;
+  }
+  el.innerHTML = data.flights.map(f => `
+    <div class="flight-item">
+      <div>
+        <b>${f.flight_id}</b> — ${f.airline}
+        <small>${f.origin} → ${f.destination} | ${f.departure} | ${f.seats_available} seats left</small>
+      </div>
+      <div><b>₹${f.price}</b></div>
+    </div>
+  `).join('');
+}
+
+async function bookFlight() {
+  const flight_id = document.getElementById('flightId').value;
+  const passenger_name = document.getElementById('passengerName').value;
+  const amount = parseInt(document.getElementById('amount').value || '0', 10);
+  const el = document.getElementById('bookingResult');
+  el.innerHTML = '<p>Booking in progress...</p>';
+  try {
+    const res = await fetch('/api/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ flight_id, passenger_name, amount })
+    });
+    const data = await res.json();
+    el.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+  } catch (e) {
+    el.innerHTML = `<pre>Error: ${e}</pre>`;
+  }
+}
+
+async function triggerChaos(service, scenario, action) {
+  const log = document.getElementById('chaosLog');
+  log.textContent = `Sending ${action.toUpperCase()} for ${scenario} on ${service}...`;
+  try {
+    const res = await fetch(`/api/chaos/${service}/${scenario}/${action}`, { method: 'POST' });
+    const data = await res.json();
+    log.textContent = JSON.stringify(data, null, 2);
+    const badgeMap = { 'memory-leak': 'badge-memory', 'error-spike': 'badge-error', 'latency': 'badge-latency' };
+    const badge = document.getElementById(badgeMap[scenario]);
+    if (badge) {
+      badge.textContent = action === 'start' ? 'ACTIVE' : 'off';
+      badge.className = 'status-badge' + (action === 'start' ? ' status-active' : '');
+    }
+  } catch (e) {
+    log.textContent = 'Error: ' + e;
+  }
+}
+</script>
+
+</body>
+</html>

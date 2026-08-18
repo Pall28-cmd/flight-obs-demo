@@ -1,0 +1,105 @@
+# ---------------------------------------------------------------------------
+# Grafana datasource provisioning.
+#
+# ⚠ IMPORTANT: delete the old `datasources.yml` from this directory before
+# starting. Grafana reads *every* .yml and .yaml file here. Two files declaring
+# datasources with the same `uid` makes provisioning fail with
+# "Datasource provisioning error: datasource with the same uid already exists"
+# and Grafana starts with no datasources at all.
+#
+#   rm grafana/provisioning/datasources/datasources.yml
+#
+# The `uid` values below are referenced literally by every panel in
+# flight_booking_grafana_dashboard.json. If you change a uid here, the dashboard
+# panels will render "Datasource not found". Keep them stable.
+# ---------------------------------------------------------------------------
+apiVersion: 1
+
+# Remove any datasource left over from an earlier provisioning run whose
+# definition has since been deleted from this file.
+deleteDatasources:
+  - name: Prometheus
+    orgId: 1
+  - name: Loki
+    orgId: 1
+  - name: Jaeger
+    orgId: 1
+
+datasources:
+  # -------------------------------------------------------------------------
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      httpMethod: POST
+      # Must be >= the scrape_interval in prometheus.yml (5s). Grafana uses this
+      # to compute $__rate_interval; setting it too low produces gaps in rate().
+      timeInterval: 5s
+      manageAlerts: false
+      prometheusType: Prometheus
+      prometheusVersion: 2.53.0
+      cacheLevel: Low
+      incrementalQuerying: false
+      # Click an exemplar on a latency panel to jump straight to its trace.
+      exemplarTraceIdDestinations:
+        - name: trace_id
+          datasourceUid: jaeger
+          urlDisplayLabel: "View trace"
+
+  # -------------------------------------------------------------------------
+  - name: Loki
+    uid: loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: true
+    jsonData:
+      maxLines: 2000
+      timeout: 60
+      # ---------------------------------------------------------------------
+      # Derived fields turn trace_id in each JSON log line into a clickable
+      # link into Jaeger. This is what makes the log -> trace hop in the
+      # dashboard's "Trace Navigation" panel work.
+      #
+      # The regex runs against the RAW log line, not against labels extracted
+      # by `| json`. That is deliberate: it works whether or not the panel's
+      # query happens to include a json stage. Requiring exactly 32 hex chars
+      # also skips the "0" placeholder the services emit when a log record is
+      # written outside any span.
+      # ---------------------------------------------------------------------
+      derivedFields:
+        - name: TraceID
+          matcherRegex: '"trace_id":\s*"([a-f0-9]{32})"'
+          url: "${__value.raw}"
+          urlDisplayLabel: "View trace in Jaeger"
+          datasourceUid: jaeger
+        - name: SpanID
+          matcherRegex: '"span_id":\s*"([a-f0-9]{16})"'
+          url: "${__value.raw}"
+          urlDisplayLabel: "Span ID"
+
+  # -------------------------------------------------------------------------
+  - name: Jaeger
+    uid: jaeger
+    type: jaeger
+    access: proxy
+    url: http://jaeger:16686
+    editable: true
+    jsonData:
+      # From a span, jump back to the logs for that same trace. Completes the
+      # metrics -> logs -> traces -> logs loop.
+      tracesToLogsV2:
+        datasourceUid: loki
+        spanStartTimeShift: "-5m"
+        spanEndTimeShift: "5m"
+        filterByTraceID: true
+        filterBySpanID: false
+        tags:
+          - key: service.name
+            value: service
+      nodeGraph:
+        enabled: true
