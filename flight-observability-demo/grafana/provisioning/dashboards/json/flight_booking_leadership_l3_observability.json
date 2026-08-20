@@ -1,0 +1,619 @@
+{
+  "title": "Flight Booking \u2014 L3: Operations + Deep Observability",
+  "uid": "flight-booking-leadership-l3-observability",
+  "version": 1,
+  "schemaVersion": 39,
+  "timezone": "browser",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "type": "text",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"display:flex;gap:10px;padding:10px;background:#1a1a1a;border-radius:4px;\">\n                <a href=\"/d/flight-booking-leadership-l1-real\" style=\"padding:8px 16px;background:#555;color:#fff;border-radius:4px;cursor:pointer;text-decoration:none;\">L1</a>\n                <a href=\"/d/flight-booking-leadership-l2-real\" style=\"padding:8px 16px;background:#555;color:#000;border-radius:4px;cursor:pointer;text-decoration:none;\">L2</a>\n                <a href=\"/d/flight-booking-leadership-l3-observability\" style=\"padding:8px 16px;background:#4caf50;color:#000;border-radius:4px;cursor:pointer;text-decoration:none;\">L3: Observability</a>\n            </div>"
+      }
+    },
+    {
+      "id": 1,
+      "type": "text",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "# L3: Operations Status + Deep Observability (LOGS, TRACES, METRICS)"
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "SERVICES UP",
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 0,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "servicenow_services_up",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#4caf50"
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "MAJOR INCIDENTS",
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 4,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "servicenow_p1_incidents",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#f44336"
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "CRITICAL ALERTS",
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 8,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "servicenow_critical_alerts",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#ff9800"
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "AVAILABILITY",
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 12,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "servicenow_availability_percentage",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#4caf50"
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "CUSTOMERS IMPACTED",
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 16,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "servicenow_customers_impacted",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#ff9800"
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "FEEDS DEGRADED",
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 20,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "servicenow_feeds_degraded",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#999"
+          }
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "\ud83d\udd34 Golden Signal: Request Latency (P50, P95, P99)",
+      "description": "Response time percentiles - Lower is better",
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 5
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "P50",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "P95",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "P99",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "\ud83d\udd34 Golden Signal: Error Rate",
+      "description": "% of requests with 4xx/5xx errors - Lower is better",
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 5
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(sum(rate(http_requests_total{status=~'5..'}[5m])) / sum(rate(http_requests_total[5m]))) * 100",
+          "legendFormat": "Error %",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "\ud83d\udd34 Golden Signal: Throughput (Requests/sec)",
+      "description": "Request volume - Shows traffic patterns",
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 5
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(rate(http_requests_total[5m]))",
+          "legendFormat": "Requests/sec",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "\ud83d\udd34 Golden Signal: Saturation (Resource Usage)",
+      "description": "CPU, Memory, Disk - Track system capacity",
+      "gridPos": {
+        "h": 4,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "rate(process_cpu_seconds_total[5m]) * 100",
+          "legendFormat": "CPU %",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "process_resident_memory_bytes / 1024 / 1024",
+          "legendFormat": "Memory MB",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "text",
+      "title": "\ud83d\udcca Service Dependency Map",
+      "gridPos": {
+        "h": 4,
+        "w": 24,
+        "x": 0,
+        "y": 13
+      },
+      "options": {
+        "mode": "html",
+        "content": "\n            <div style=\"padding:20px;background:#1a1a1a;border:1px solid #333;border-radius:8px;text-align:center;\">\n                <h3>\ud83c\udf10 Flight Booking Microservices Topology</h3>\n                <div style=\"display:flex;justify-content:space-around;margin-top:20px;\">\n                    <div style=\"padding:15px;background:#2196F3;border-radius:4px;color:#fff;flex:1;margin:0 10px;\">\n                        <strong>Flight Search</strong><br>\n                        <small>Port 8001 | Response Time</small>\n                    </div>\n                    <div style=\"padding:15px;background:#4CAF50;border-radius:4px;color:#fff;flex:1;margin:0 10px;\">\n                        <strong>Booking Service</strong><br>\n                        <small>Port 8002 | Orchestrator</small>\n                    </div>\n                    <div style=\"padding:15px;background:#FF9800;border-radius:4px;color:#fff;flex:1;margin:0 10px;\">\n                        <strong>Payment Service</strong><br>\n                        <small>Port 8003 | Transaction</small>\n                    </div>\n                </div>\n                <p style=\"margin-top:20px;color:#888;font-size:12px;\">Flow: Flight Search \u2192 Booking (orchestrates) \u2192 Payment</p>\n            </div>\n            "
+      }
+    },
+    {
+      "id": 13,
+      "type": "logs",
+      "title": "\ud83d\udccb Application Logs (Loki)",
+      "description": "Real-time logs from all microservices",
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 0,
+        "y": 17
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{job=~\"booking-service|payment-service|flight-search-service\"}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "type": "nodeGraph",
+      "title": "\ud83d\udd17 Distributed Traces (Jaeger)",
+      "description": "Request flow across services",
+      "gridPos": {
+        "h": 5,
+        "w": 12,
+        "x": 12,
+        "y": 17
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "jaeger",
+            "uid": "jaeger"
+          },
+          "query": "",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "type": "timeseries",
+      "title": "\u2699\ufe0f Booking Service - Metrics",
+      "gridPos": {
+        "h": 3,
+        "w": 8,
+        "x": 0,
+        "y": 22
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "rate(http_requests_total{job='booking-service'}[5m])",
+          "legendFormat": "Req/s",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job='booking-service'}[5m]))",
+          "legendFormat": "P95 Latency",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "rate(http_requests_total{job='booking-service',status=~'5..'}[5m])",
+          "legendFormat": "Errors/s",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "type": "timeseries",
+      "title": "\u2699\ufe0f Payment Service - Metrics",
+      "gridPos": {
+        "h": 3,
+        "w": 8,
+        "x": 8,
+        "y": 22
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "rate(http_requests_total{job='payment-service'}[5m])",
+          "legendFormat": "Req/s",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job='payment-service'}[5m]))",
+          "legendFormat": "P95 Latency",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "rate(http_requests_total{job='payment-service',status=~'5..'}[5m])",
+          "legendFormat": "Errors/s",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "type": "timeseries",
+      "title": "\u2699\ufe0f Flight Search - Metrics",
+      "gridPos": {
+        "h": 3,
+        "w": 8,
+        "x": 16,
+        "y": 22
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "rate(http_requests_total{job='flight-search-service'}[5m])",
+          "legendFormat": "Req/s",
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job='flight-search-service'}[5m]))",
+          "legendFormat": "P95 Latency",
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "rate(http_requests_total{job='flight-search-service',status=~'5..'}[5m])",
+          "legendFormat": "Errors/s",
+          "refId": "C"
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "type": "text",
+      "title": "Active Major Incident",
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 25
+      },
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"padding:10px;background:#ffebee;border-left:4px solid #f44336;\"><strong>INC0041823 \u00b7 Trading (P1)</strong><br><small>Started 14:22 \u00b7 2h40m \u00b7 Order DB connection pool</small></div>"
+      }
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "tags": [
+    "leadership",
+    "observability",
+    "logs",
+    "traces"
+  ],
+  "refresh": "10s"
+}
