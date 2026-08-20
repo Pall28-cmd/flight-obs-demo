@@ -34,125 +34,17 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "# SRE Dashboard - S1: Operations & Observability"
+        "content": "# SRE-1: Operations & Observability"
       }
     },
     {
       "id": 2,
       "type": "stat",
-      "title": "SERVICES UP",
-      "gridPos": {
-        "h": 3,
-        "w": 4,
-        "x": 0,
-        "y": 2
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "servicenow_services_up",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#4caf50"
-          }
-        }
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      }
-    },
-    {
-      "id": 3,
-      "type": "stat",
-      "title": "MAJOR INCIDENTS",
-      "gridPos": {
-        "h": 3,
-        "w": 4,
-        "x": 4,
-        "y": 2
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "servicenow_p1_incidents",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#f44336"
-          }
-        }
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      }
-    },
-    {
-      "id": 4,
-      "type": "stat",
-      "title": "CRITICAL ALERTS",
-      "gridPos": {
-        "h": 3,
-        "w": 4,
-        "x": 8,
-        "y": 2
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "servicenow_critical_alerts",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#ff9800"
-          }
-        }
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      }
-    },
-    {
-      "id": 5,
-      "type": "stat",
       "title": "AVAILABILITY",
       "gridPos": {
         "h": 3,
         "w": 4,
-        "x": 12,
+        "x": 0,
         "y": 2
       },
       "targets": [
@@ -170,7 +62,119 @@
           "color": {
             "mode": "fixed",
             "fixedColor": "#4caf50"
-          }
+          },
+          "unit": "percent"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "MTTD",
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 4,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "vector(12)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#ff9800"
+          },
+          "unit": "m"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "ALERT:TICKET RATIO",
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 8,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "vector(30)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#ff9800"
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "ERROR RATE",
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 12,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "vector(2.3)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#f44336"
+          },
+          "unit": "percent"
         }
       },
       "options": {
@@ -184,7 +188,7 @@
     {
       "id": 6,
       "type": "stat",
-      "title": "CUSTOMERS IMPACTED",
+      "title": "APDEX",
       "gridPos": {
         "h": 3,
         "w": 4,
@@ -197,7 +201,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "servicenow_customers_impacted",
+          "expr": "vector(0.86)",
           "refId": "A"
         }
       ],
@@ -205,8 +209,9 @@
         "defaults": {
           "color": {
             "mode": "fixed",
-            "fixedColor": "#ff9800"
-          }
+            "fixedColor": "#FFC107"
+          },
+          "unit": "short"
         }
       },
       "options": {
@@ -220,7 +225,7 @@
     {
       "id": 7,
       "type": "stat",
-      "title": "FEEDS DEGRADED",
+      "title": "FALSE POSITIVES",
       "gridPos": {
         "h": 3,
         "w": 4,
@@ -233,7 +238,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "servicenow_feeds_degraded",
+          "expr": "vector(14)",
           "refId": "A"
         }
       ],
@@ -241,8 +246,9 @@
         "defaults": {
           "color": {
             "mode": "fixed",
-            "fixedColor": "#999"
-          }
+            "fixedColor": "#ff9800"
+          },
+          "unit": "percent"
         }
       },
       "options": {
@@ -255,11 +261,12 @@
     },
     {
       "id": 8,
-      "type": "timeseries",
-      "title": "\ud83d\udd34 Golden Signal: Latency (P50/P95/P99)",
+      "type": "table",
+      "title": "SLO/SLI & Error Budget",
+      "description": "Objective vs Actual - Burn Rate",
       "gridPos": {
         "h": 4,
-        "w": 8,
+        "w": 24,
         "x": 0,
         "y": 5
       },
@@ -269,39 +276,87 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket[5m]))",
-          "legendFormat": "P50",
+          "expr": "up",
+          "format": "table",
+          "instant": true,
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
-          "legendFormat": "P95",
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket[5m]))",
-          "legendFormat": "P99",
-          "refId": "C"
         }
       ]
     },
     {
       "id": 9,
       "type": "timeseries",
-      "title": "\ud83d\udd34 Golden Signal: Error Rate",
+      "title": "Error Budget Burn Rate",
+      "description": "Burn rate trend - How fast budget is consumed",
+      "gridPos": {
+        "h": 3,
+        "w": 24,
+        "x": 0,
+        "y": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "vector(1)",
+          "legendFormat": "Burn Rate",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "text",
+      "title": "Dependency / Service-Map Health (RAG)",
+      "description": "Upstream \u2192 Downstream RAG status",
       "gridPos": {
         "h": 4,
-        "w": 8,
-        "x": 8,
-        "y": 5
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "options": {
+        "mode": "html",
+        "content": "\n            <div style=\"padding:20px;background:#1a1a1a;border-radius:8px;\">\n                <h4>Service Dependency Health</h4>\n                <div style=\"display:flex;justify-content:space-around;margin-top:15px;gap:10px;\">\n                    <div style=\"padding:12px;background:#4CAF50;border-radius:4px;color:#fff;flex:1;\">\n                        <strong>Flight Search</strong><br><small>\u2713 Green - Healthy</small>\n                    </div>\n                    <div style=\"padding:12px;background:#4CAF50;border-radius:4px;color:#fff;flex:1;\">\n                        <strong>Booking Service</strong><br><small>\u2713 Green - Healthy</small>\n                    </div>\n                    <div style=\"padding:12px;background:#FF9800;border-radius:4px;color:#fff;flex:1;\">\n                        <strong>Payment Service</strong><br><small>\u26a0 Amber - Degraded</small>\n                    </div>\n                </div>\n            </div>\n            "
+      }
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "\ud83d\udd34 Latency (P95)",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 16
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "\ud83d\udd34 Errors",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 16
       },
       "targets": [
         {
@@ -310,20 +365,50 @@
             "uid": "prometheus"
           },
           "expr": "(sum(rate(http_requests_total{status=~'5..'}[5m])) / sum(rate(http_requests_total[5m]))) * 100",
-          "legendFormat": "Error %",
           "refId": "A"
         }
-      ]
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent"
+        }
+      }
     },
     {
-      "id": 10,
+      "id": 13,
       "type": "timeseries",
-      "title": "\ud83d\udd34 Golden Signal: Throughput",
+      "title": "\ud83d\udd34 Saturation",
       "gridPos": {
         "h": 4,
-        "w": 8,
-        "x": 16,
-        "y": 5
+        "w": 6,
+        "x": 12,
+        "y": 16
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "process_resident_memory_bytes / 1024 / 1024",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "MB"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "\ud83d\udd34 Traffic",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 16
       },
       "targets": [
         {
@@ -332,24 +417,101 @@
             "uid": "prometheus"
           },
           "expr": "sum(rate(http_requests_total[5m]))",
-          "legendFormat": "Req/s",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        }
+      }
+    },
+    {
+      "id": 15,
+      "type": "text",
+      "title": "Observability Coverage Matrix",
+      "description": "By component and tool",
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "options": {
+        "mode": "html",
+        "content": "\n            <table style=\"width:100%;color:#ccc;border-collapse:collapse;\">\n                <tr style=\"border-bottom:1px solid #333;\">\n                    <th style=\"text-align:left;padding:8px;\">Component</th>\n                    <th style=\"text-align:center;padding:8px;\">Metrics</th>\n                    <th style=\"text-align:center;padding:8px;\">Logs</th>\n                    <th style=\"text-align:center;padding:8px;\">Traces</th>\n                </tr>\n                <tr style=\"border-bottom:1px solid #333;\"><td style=\"padding:8px;\">App Server</td><td style=\"text-align:center;\">\u2713 Dynatrace</td><td style=\"text-align:center;\">\u2713</td><td style=\"text-align:center;\">\u2713</td></tr>\n                <tr style=\"border-bottom:1px solid #333;\"><td style=\"padding:8px;\">Web Server</td><td style=\"text-align:center;\">\u2713 Datadog</td><td style=\"text-align:center;\">\u2713</td><td style=\"text-align:center;\">\u2713</td></tr>\n                <tr style=\"border-bottom:1px solid #333;\"><td style=\"padding:8px;\">DB Server</td><td style=\"text-align:center;\">\u26a0 Partial</td><td style=\"text-align:center;\">\u2713</td><td style=\"text-align:center;\">\u2717</td></tr>\n                <tr><td style=\"padding:8px;\">API</td><td style=\"text-align:center;\">\u2717</td><td style=\"text-align:center;\">\u2717</td><td style=\"text-align:center;\">\u2717</td></tr>\n            </table>\n            "
+      }
+    },
+    {
+      "id": 16,
+      "type": "text",
+      "title": "Infrastructure Health",
+      "description": "CPU, Memory, Network status",
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
+      "options": {
+        "mode": "html",
+        "content": "\n            <table style=\"width:100%;color:#ccc;border-collapse:collapse;\">\n                <tr style=\"border-bottom:1px solid #333;\">\n                    <th style=\"text-align:left;padding:8px;\">Resource</th>\n                    <th style=\"text-align:center;padding:8px;\">Usage</th>\n                    <th style=\"text-align:center;padding:8px;\">Status</th>\n                </tr>\n                <tr style=\"border-bottom:1px solid #333;\"><td style=\"padding:8px;\">CPU</td><td style=\"text-align:center;\">91%</td><td style=\"text-align:center;\">\ud83d\udd34 Saturated</td></tr>\n                <tr style=\"border-bottom:1px solid #333;\"><td style=\"padding:8px;\">Memory</td><td style=\"text-align:center;\">78%</td><td style=\"text-align:center;\">\ud83d\udfe1 Warning</td></tr>\n                <tr><td style=\"padding:8px;\">Network</td><td style=\"text-align:center;\">62%</td><td style=\"text-align:center;\">\ud83d\udfe2 Healthy</td></tr>\n            </table>\n            "
+      }
+    },
+    {
+      "id": 17,
+      "type": "text",
+      "title": "Logs & Traces Counts",
+      "description": "Volume and signal counts",
+      "gridPos": {
+        "h": 3,
+        "w": 12,
+        "x": 0,
+        "y": 24
+      },
+      "options": {
+        "mode": "html",
+        "content": "\n            <div style=\"display:flex;gap:15px;\">\n                <div style=\"flex:1;padding:15px;background:#1a1a1a;border:1px solid #333;border-radius:4px;text-align:center;\">\n                    <div style=\"font-size:24px;color:#4caf50;font-weight:bold;\">5xx Errors</div>\n                    <div style=\"color:#888;font-size:12px;margin-top:5px;\">Last 15m: 318</div>\n                </div>\n                <div style=\"flex:1;padding:15px;background:#1a1a1a;border:1px solid #333;border-radius:4px;text-align:center;\">\n                    <div style=\"font-size:24px;color:#ff9800;font-weight:bold;\">DB Timeout</div>\n                    <div style=\"color:#888;font-size:12px;margin-top:5px;\">Last 15m: 271</div>\n                </div>\n                <div style=\"flex:1;padding:15px;background:#1a1a1a;border:1px solid #333;border-radius:4px;text-align:center;\">\n                    <div style=\"font-size:24px;color:#f44336;font-weight:bold;\">Slow Traces</div>\n                    <div style=\"color:#888;font-size:12px;margin-top:5px;\">Last 15m: 44</div>\n                </div>\n            </div>\n            "
+      }
+    },
+    {
+      "id": 18,
+      "type": "table",
+      "title": "Impacted CIs \u00b7 INC \u00b7 CHG",
+      "description": "ITSM/ITOM join",
+      "gridPos": {
+        "h": 3,
+        "w": 12,
+        "x": 12,
+        "y": 24
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "up",
+          "format": "table",
+          "instant": true,
           "refId": "A"
         }
       ]
     },
     {
-      "id": 11,
+      "id": 19,
       "type": "text",
-      "title": "\ud83d\udcca Service Dependency Map",
+      "title": "AIOps Correlation & Root Cause",
+      "description": "Noise reduction - Raw alerts \u2192 Correlated \u2192 Root cause",
       "gridPos": {
         "h": 3,
         "w": 24,
         "x": 0,
-        "y": 9
+        "y": 27
       },
       "options": {
         "mode": "html",
-        "content": "<div style=\"padding:20px;background:#1a1a1a;border:1px solid #333;border-radius:8px;text-align:center;\">\n                <h3>Flight Booking Microservices</h3>\n                <div style=\"display:flex;justify-content:space-around;margin-top:15px;\">\n                    <div style=\"padding:12px;background:#2196F3;border-radius:4px;color:#fff;flex:1;margin:0 10px;\">Flight Search<br><small>8001</small></div>\n                    <div style=\"padding:12px;background:#4CAF50;border-radius:4px;color:#fff;flex:1;margin:0 10px;\">Booking<br><small>8002</small></div>\n                    <div style=\"padding:12px;background:#FF9800;border-radius:4px;color:#fff;flex:1;margin:0 10px;\">Payment<br><small>8003</small></div>\n                </div>\n            </div>"
+        "content": "\n            <div style=\"display:flex;gap:15px;padding:15px;background:#1a1a1a;border-radius:4px;\">\n                <div style=\"flex:1;text-align:center;border-right:1px solid #333;\">\n                    <div style=\"font-size:32px;color:#f44336;font-weight:bold;\">1,240</div>\n                    <div style=\"color:#888;font-size:12px;margin-top:5px;\">RAW ALERTS (1H)</div>\n                </div>\n                <div style=\"flex:1;text-align:center;border-right:1px solid #333;\">\n                    <div style=\"font-size:32px;color:#ff9800;font-weight:bold;\">38</div>\n                    <div style=\"color:#888;font-size:12px;margin-top:5px;\">CORRELATED</div>\n                </div>\n                <div style=\"flex:1;text-align:center;border-right:1px solid #333;\">\n                    <div style=\"font-size:32px;color:#4caf50;font-weight:bold;\">Order DB conn pool</div>\n                    <div style=\"color:#888;font-size:12px;margin-top:5px;\">ROOT CAUSE (DAVIS AI)</div>\n                </div>\n                <div style=\"flex:1;text-align:center;\">\n                    <div style=\"font-size:32px;color:#FFC107;font-weight:bold;\">14%</div>\n                    <div style=\"color:#888;font-size:12px;margin-top:5px;\">FALSE POSITIVE</div>\n                </div>\n            </div>\n            "
       }
     }
   ],
