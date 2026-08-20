@@ -1,5 +1,5 @@
 {
-  "title": "Flight Booking \u2014 L1: Executive Summary (DERIVED METRICS)",
+  "title": "Flight Booking \u2014 L1: Executive Summary",
   "uid": "flight-booking-leadership-l1-real",
   "version": 1,
   "schemaVersion": 39,
@@ -17,10 +17,10 @@
         "x": 0,
         "y": 0
       },
-      "id": 999,
+      "id": 1,
       "options": {
         "mode": "html",
-        "content": "<div style=\"display:flex;gap:10px;padding:10px;background:#1a1a1a;border-radius:4px;border:1px solid #333;\">\n                <a href=\"/d/flight-booking-leadership-l1-real\" style=\"padding:8px 16px;background:#00bcd4;color:#fff;border-radius:4px;cursor:pointer;text-decoration:none;font-weight:600;\">L1: Executive</a>\n                <a href=\"/d/flight-booking-leadership-l2-real\" style=\"padding:8px 16px;background:#555;color:#000;border-radius:4px;cursor:pointer;text-decoration:none;font-weight:600;\">L2: Maturity</a>\n                <a href=\"/d/flight-booking-leadership-l3-real\" style=\"padding:8px 16px;background:#555;color:#000;border-radius:4px;cursor:pointer;text-decoration:none;font-weight:600;\">L3: Operations</a>\n            </div>"
+        "content": "<div style=\"display:flex;gap:10px;padding:10px;background:#1a1a1a;border-radius:4px;\">\n                <a href=\"/d/flight-booking-leadership-l1-real\" style=\"padding:8px 16px;background:#00bcd4;color:#fff;border-radius:4px;cursor:pointer;text-decoration:none;\">L1</a>\n                <a href=\"/d/flight-booking-leadership-l2-real\" style=\"padding:8px 16px;background:#555;color:#000;border-radius:4px;cursor:pointer;text-decoration:none;\">L2</a>\n                <a href=\"/d/flight-booking-leadership-l3-real\" style=\"padding:8px 16px;background:#555;color:#000;border-radius:4px;cursor:pointer;text-decoration:none;\">L3</a>\n            </div>"
       }
     },
     {
@@ -34,75 +34,17 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "# L1: Executive Summary (REAL DATA - Derived Metrics)"
+        "content": "# L1: Executive Summary (DIRECT METRICS)"
       }
     },
     {
       "id": 2,
       "type": "stat",
-      "title": "IT HEALTH SCORE",
-      "description": "70% Availability + 30% Incident Health",
+      "title": "AVAILABILITY",
       "gridPos": {
         "h": 4,
         "w": 4,
         "x": 0,
-        "y": 2
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "(servicenow_availability_percentage * 0.7) + ((100 - servicenow_p1_incidents * 10) * 0.3)",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#ff9800"
-          },
-          "unit": "short",
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 50
-              },
-              {
-                "color": "green",
-                "value": 80
-              }
-            ]
-          }
-        }
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "textMode": "auto",
-        "graphMode": "area"
-      }
-    },
-    {
-      "id": 3,
-      "type": "stat",
-      "title": "AVAILABILITY",
-      "description": "Real from ITOM",
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 4,
         "y": 2
       },
       "targets": [
@@ -121,24 +63,7 @@
             "mode": "fixed",
             "fixedColor": "#4caf50"
           },
-          "unit": "percent",
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 50
-              },
-              {
-                "color": "green",
-                "value": 80
-              }
-            ]
-          }
+          "unit": "percent"
         }
       },
       "options": {
@@ -146,16 +71,50 @@
           "calcs": [
             "lastNotNull"
           ]
-        },
-        "textMode": "auto",
-        "graphMode": "area"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "SERVICES UP",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "servicenow_services_up",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#4caf50"
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
       }
     },
     {
       "id": 4,
       "type": "stat",
-      "title": "SLA COMPLIANCE",
-      "description": "95% of Availability",
+      "title": "MAJOR INCIDENTS",
       "gridPos": {
         "h": 4,
         "w": 4,
@@ -168,7 +127,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "servicenow_availability_percentage * 0.95",
+          "expr": "servicenow_major_incidents_open",
           "refId": "A"
         }
       ],
@@ -176,26 +135,9 @@
         "defaults": {
           "color": {
             "mode": "fixed",
-            "fixedColor": "#ff9800"
+            "fixedColor": "#f44336"
           },
-          "unit": "percent",
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 50
-              },
-              {
-                "color": "green",
-                "value": 80
-              }
-            ]
-          }
+          "unit": "short"
         }
       },
       "options": {
@@ -203,16 +145,13 @@
           "calcs": [
             "lastNotNull"
           ]
-        },
-        "textMode": "auto",
-        "graphMode": "area"
+        }
       }
     },
     {
       "id": 5,
       "type": "stat",
-      "title": "CRITICAL SERVICES",
-      "description": "Total services (up + degraded + down)",
+      "title": "P1 INCIDENTS",
       "gridPos": {
         "h": 4,
         "w": 4,
@@ -225,7 +164,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "servicenow_services_up + servicenow_services_degraded + servicenow_services_down",
+          "expr": "servicenow_p1_incidents",
           "refId": "A"
         }
       ],
@@ -233,26 +172,9 @@
         "defaults": {
           "color": {
             "mode": "fixed",
-            "fixedColor": "#2196F3"
+            "fixedColor": "#f44336"
           },
-          "unit": "short",
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 50
-              },
-              {
-                "color": "green",
-                "value": 80
-              }
-            ]
-          }
+          "unit": "short"
         }
       },
       "options": {
@@ -260,16 +182,13 @@
           "calcs": [
             "lastNotNull"
           ]
-        },
-        "textMode": "auto",
-        "graphMode": "area"
+        }
       }
     },
     {
       "id": 6,
       "type": "stat",
-      "title": "INCIDENT HEALTH",
-      "description": "100% minus incident impact",
+      "title": "CRITICAL ALERTS",
       "gridPos": {
         "h": 4,
         "w": 4,
@@ -282,7 +201,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "(100 - (servicenow_major_incidents_open * 20))",
+          "expr": "servicenow_critical_alerts",
           "refId": "A"
         }
       ],
@@ -290,26 +209,9 @@
         "defaults": {
           "color": {
             "mode": "fixed",
-            "fixedColor": "#f44336"
+            "fixedColor": "#ff9800"
           },
-          "unit": "percent",
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 50
-              },
-              {
-                "color": "green",
-                "value": 80
-              }
-            ]
-          }
+          "unit": "short"
         }
       },
       "options": {
@@ -317,16 +219,13 @@
           "calcs": [
             "lastNotNull"
           ]
-        },
-        "textMode": "auto",
-        "graphMode": "area"
+        }
       }
     },
     {
       "id": 7,
       "type": "stat",
       "title": "CUSTOMER IMPACT",
-      "description": "Customers affected (from ITOM)",
       "gridPos": {
         "h": 4,
         "w": 4,
@@ -347,26 +246,9 @@
         "defaults": {
           "color": {
             "mode": "fixed",
-            "fixedColor": "#f44336"
+            "fixedColor": "#ff9800"
           },
-          "unit": "short",
-          "thresholds": {
-            "mode": "percentage",
-            "steps": [
-              {
-                "color": "red",
-                "value": null
-              },
-              {
-                "color": "orange",
-                "value": 50
-              },
-              {
-                "color": "green",
-                "value": 80
-              }
-            ]
-          }
+          "unit": "short"
         }
       },
       "options": {
@@ -374,9 +256,7 @@
           "calcs": [
             "lastNotNull"
           ]
-        },
-        "textMode": "auto",
-        "graphMode": "area"
+        }
       }
     },
     {
@@ -399,14 +279,7 @@
           "legendFormat": "Availability %",
           "refId": "A"
         }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "min": 0,
-          "max": 100
-        }
-      }
+      ]
     },
     {
       "id": 9,
@@ -425,7 +298,7 @@
             "uid": "prometheus"
           },
           "expr": "servicenow_major_incidents_open",
-          "legendFormat": "Open Incidents",
+          "legendFormat": "Total Incidents",
           "refId": "A"
         },
         {
@@ -434,45 +307,17 @@
             "uid": "prometheus"
           },
           "expr": "servicenow_p1_incidents",
-          "legendFormat": "P1 Incidents",
+          "legendFormat": "P1 Only",
           "refId": "B"
         }
       ]
-    },
-    {
-      "id": 10,
-      "type": "stat",
-      "title": "Services Status Summary",
-      "gridPos": {
-        "h": 2,
-        "w": 24,
-        "x": 0,
-        "y": 9
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "servicenow_services_up",
-          "legendFormat": "UP",
-          "refId": "A"
-        }
-      ],
-      "options": {
-        "textMode": "auto",
-        "graphMode": "area"
-      }
     }
   ],
   "templating": {
     "list": []
   },
   "tags": [
-    "leadership",
-    "executive",
-    "derived"
+    "leadership"
   ],
   "refresh": "30s"
 }
