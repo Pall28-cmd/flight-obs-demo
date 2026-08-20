@@ -1,0 +1,366 @@
+{
+  "title": "Flight Booking \u2014 Leadership L3: Operations Status (REAL DATA)",
+  "uid": "flight-booking-leadership-l3-real",
+  "version": 1,
+  "schemaVersion": 39,
+  "timezone": "browser",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "type": "text",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "mode": "html",
+        "content": "\n            <div style=\"display:flex;gap:10px;align-items:center;padding:10px;background:#1a1a1a;border-radius:4px;border:1px solid #333;\">\n                <a href=\"/d/flight-booking-leadership-l1\" style=\"padding:8px 16px;background:#555;color:#fff;border-radius:4px;cursor:pointer;\">L1: Executive</a>\n                <a href=\"/d/flight-booking-leadership-l2\" style=\"padding:8px 16px;background:#555;color:#fff;border-radius:4px;cursor:pointer;\">L2: Maturity</a>\n                <a href=\"/d/flight-booking-leadership-l3\" style=\"padding:8px 16px;background:#4caf50;color:#000;border-radius:4px;cursor:pointer;font-weight:600;\">L3: Operations</a>\n            </div>\n            "
+      },
+      "id": 1
+    },
+    {
+      "id": 2,
+      "type": "text",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "# Leadership \u2014 Operations Status (REAL DATA)"
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "SERVICES UP",
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 0,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "servicenow_services_up + servicenow_services_degraded + servicenow_services_down",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#4caf50"
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "MAJOR INCIDENTS",
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 4,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "servicenow_p1_incidents",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#f44336"
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "CRITICAL ALERTS",
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 8,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "servicenow_critical_alerts",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#ff9800"
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "LIVE AVAILABILITY",
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 12,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "servicenow_availability_percentage",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#4caf50"
+          },
+          "unit": "percent"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "CUSTOMERS IMPACTED",
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 16,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "servicenow_customers_impacted / 1000",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#ff9800"
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "FEEDS DEGRADED",
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 20,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "servicenow_feeds_degraded",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#999"
+          },
+          "unit": "short"
+        }
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        }
+      }
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Business service availability \u2014 RAG",
+      "gridPos": {
+        "h": 3,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "servicenow_services_up",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      }
+    },
+    {
+      "id": 10,
+      "type": "text",
+      "title": "Active major incident - P1 operational card",
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "options": {
+        "mode": "html",
+        "content": "\n            <div style=\"padding:15px;background:#ffebee;border-left:4px solid #f44336;border-radius:4px;\">\n                <strong style=\"color:#c62828;\">INC0041823 \u00b7 Trading</strong><br>\n                <small style=\"color:#666;\">Started 14:22 \u00b7 2h40m \u00b7 Bridge OPEN \u00b7 customer notice sent</small><br>\n                <small style=\"color:#d32f2f;\"><strong>Probable cause (Davis AI):</strong> Order DB connection pool</small>\n            </div>\n            "
+      }
+    },
+    {
+      "id": 11,
+      "type": "table",
+      "title": "Data source & feed health - dataset freshness",
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "up",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "table",
+      "title": "Critical alert summary - correlated, non-technical",
+      "gridPos": {
+        "h": 2,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "up",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "Environment",
+        "type": "custom",
+        "query": "dev"
+      }
+    ]
+  },
+  "tags": [
+    "leadership",
+    "operations",
+    "itom"
+  ],
+  "refresh": "10s"
+}
