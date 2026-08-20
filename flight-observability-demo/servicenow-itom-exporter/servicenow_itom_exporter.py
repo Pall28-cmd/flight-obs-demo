@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 app = Flask(__name__)
 
 # Import the ITOM generator
-from build_servicenow_itom_extended import ServiceNowITOMExtended
+from servicenow_itom_extended import ServiceNowITOMExtended
 
 # Initialize ITOM
 itom = ServiceNowITOMExtended()
