@@ -1,5 +1,5 @@
 {
-  "title": "Flight Booking \u2014 Leadership L2: Maturity Scorecard (REAL DATA)",
+  "title": "Flight Booking \u2014 L2: Maturity Scorecard (CALCULATED)",
   "uid": "flight-booking-leadership-l2-real",
   "version": 1,
   "schemaVersion": 39,
@@ -17,14 +17,14 @@
         "x": 0,
         "y": 0
       },
+      "id": 999,
       "options": {
         "mode": "html",
-        "content": "\n            <div style=\"display:flex;gap:10px;align-items:center;padding:10px;background:#1a1a1a;border-radius:4px;border:1px solid #333;\">\n                <a href=\"/d/flight-booking-leadership-l1-real\" style=\"padding:8px 16px;background:#555;color:#fff;border-radius:4px;cursor:pointer;text-decoration:none;\">L1: Executive</a>\n                <a href=\"/d/flight-booking-leadership-l2-real\" style=\"padding:8px 16px;background:#ff9800;color:#000;border-radius:4px;cursor:pointer;text-decoration:none;\">L2: Maturity</a>\n                <a href=\"/d/flight-booking-leadership-l3-real\" style=\"padding:8px 16px;background:#555;color:#000;border-radius:4px;cursor:pointer;text-decoration:none;\">L3: Operations</a>\n            </div>\n            "
-      },
-      "id": 1
+        "content": "<div style=\"display:flex;gap:10px;padding:10px;background:#1a1a1a;border-radius:4px;border:1px solid #333;\">\n                <a href=\"/d/flight-booking-leadership-l1-real\" style=\"padding:8px 16px;background:#555;color:#fff;border-radius:4px;cursor:pointer;text-decoration:none;font-weight:600;\">L1: Executive</a>\n                <a href=\"/d/flight-booking-leadership-l2-real\" style=\"padding:8px 16px;background:#ff9800;color:#000;border-radius:4px;cursor:pointer;text-decoration:none;font-weight:600;\">L2: Maturity</a>\n                <a href=\"/d/flight-booking-leadership-l3-real\" style=\"padding:8px 16px;background:#555;color:#000;border-radius:4px;cursor:pointer;text-decoration:none;font-weight:600;\">L3: Operations</a>\n            </div>"
+      }
     },
     {
-      "id": 2,
+      "id": 1,
       "type": "text",
       "gridPos": {
         "h": 1,
@@ -34,13 +34,14 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "# Leadership \u2014 Maturity Scorecard (REAL DATA)"
+        "content": "# L2: Maturity Scorecard (CALCULATED METRICS)"
       }
     },
     {
-      "id": 3,
+      "id": 2,
       "type": "gauge",
-      "title": "Overall maturity score",
+      "title": "Overall Maturity Score (0-5)",
+      "description": "Calculated: (Availability/100)*5",
       "gridPos": {
         "h": 5,
         "w": 6,
@@ -77,6 +78,10 @@
                 "value": 2
               },
               {
+                "color": "yellow",
+                "value": 3
+              },
+              {
                 "color": "green",
                 "value": 4
               }
@@ -86,12 +91,12 @@
       }
     },
     {
-      "id": 4,
-      "type": "barchart",
-      "title": "Score by platform dimension",
+      "id": 3,
+      "type": "stat",
+      "title": "Availability Score",
       "gridPos": {
         "h": 5,
-        "w": 18,
+        "w": 6,
         "x": 6,
         "y": 2
       },
@@ -101,18 +106,91 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "up",
+          "expr": "servicenow_availability_percentage / 20",
           "refId": "A"
         }
       ],
-      "options": {
-        "orientation": "horizontal"
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#4caf50"
+          },
+          "unit": "short",
+          "min": 0,
+          "max": 5
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Reliability Score",
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 12,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(100 - (servicenow_major_incidents_open * 20)) / 20",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#2196F3"
+          },
+          "unit": "short",
+          "min": 0,
+          "max": 5
+        }
       }
     },
     {
       "id": 5,
-      "type": "barchart",
-      "title": "Coverage vs Effectiveness",
+      "type": "stat",
+      "title": "Coverage Score",
+      "gridPos": {
+        "h": 5,
+        "w": 6,
+        "x": 18,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(servicenow_services_up / (servicenow_services_up + servicenow_services_degraded + servicenow_services_down)) * 5",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#FF9800"
+          },
+          "unit": "short",
+          "min": 0,
+          "max": 5
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "System Effectiveness (%)",
+      "description": "(100 - Incident Count * Weight) / 100",
       "gridPos": {
         "h": 4,
         "w": 12,
@@ -125,18 +203,42 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "up",
+          "expr": "((100 - (servicenow_critical_alerts * 5)) / 100) * 100",
           "refId": "A"
         }
       ],
-      "options": {
-        "orientation": "horizontal"
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#4caf50"
+          },
+          "unit": "percent",
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 50
+              },
+              {
+                "color": "green",
+                "value": 80
+              }
+            ]
+          }
+        }
       }
     },
     {
-      "id": 6,
-      "type": "timeseries",
-      "title": "Maturity trend (Reactive \u2192 Proactive \u2192 Predictive)",
+      "id": 7,
+      "type": "stat",
+      "title": "Service Coverage (%)",
+      "description": "Services UP / Total Services",
       "gridPos": {
         "h": 4,
         "w": 12,
@@ -149,18 +251,27 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "(servicenow_availability_percentage / 100) * 5",
-          "legendFormat": "Maturity",
+          "expr": "(servicenow_services_up / (servicenow_services_up + servicenow_services_degraded + servicenow_services_down)) * 100",
           "refId": "A"
         }
-      ]
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#FF9800"
+          },
+          "unit": "percent"
+        }
+      }
     },
     {
-      "id": 7,
-      "type": "table",
-      "title": "KPI detail \u2014 benchmark vs actual",
+      "id": 8,
+      "type": "timeseries",
+      "title": "Maturity Trend (Over Time)",
+      "description": "Overall Score = (Availability/100)*5",
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 24,
         "x": 0,
         "y": 11
@@ -171,27 +282,27 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "up",
-          "format": "table",
-          "instant": true,
+          "expr": "(servicenow_availability_percentage / 100) * 5",
+          "legendFormat": "Maturity",
           "refId": "A"
         }
-      ]
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "max": 5
+        }
+      }
     }
   ],
   "templating": {
-    "list": [
-      {
-        "name": "Environment",
-        "type": "custom",
-        "query": "dev"
-      }
-    ]
+    "list": []
   },
   "tags": [
     "leadership",
     "maturity",
-    "real-data"
+    "calculated"
   ],
   "refresh": "1h"
 }
