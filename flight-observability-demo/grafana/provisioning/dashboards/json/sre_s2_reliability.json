@@ -1,0 +1,364 @@
+{
+  "title": "SRE Dashboard - S2: Reliability Analytics",
+  "uid": "sre-reliability",
+  "version": 1,
+  "schemaVersion": 39,
+  "timezone": "browser",
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "type": "text",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "mode": "html",
+        "content": "<div style=\"display:flex;gap:10px;padding:10px;background:#1a1a1a;border-radius:4px;\">\n                <a href=\"/d/sre-ops-observability\" style=\"padding:8px 16px;background:#555;color:#fff;border-radius:4px;cursor:pointer;text-decoration:none;font-weight:600;\">S1: Ops & Observability</a>\n                <a href=\"/d/sre-reliability\" style=\"padding:8px 16px;background:#ff9800;color:#000;border-radius:4px;cursor:pointer;text-decoration:none;font-weight:600;\">S2: Reliability</a>\n            </div>"
+      }
+    },
+    {
+      "id": 1,
+      "type": "text",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "options": {
+        "mode": "markdown",
+        "content": "# SRE Dashboard - S2: Reliability Analytics"
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "MTTD (30D)",
+      "description": "target \u226415m",
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 0,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "vector(1)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "time"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "MTTR P1/P2",
+      "description": "target 1.7-1.9h",
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 4,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "vector(1)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "time"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "MONITORING COVERAGE",
+      "description": "target \u226590%",
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 8,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "vector(1)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "RECURRING INCIDENTS",
+      "description": "target of P1/P2",
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 12,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "vector(1)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "FULLY-AUTO RESOLUTION",
+      "description": "target \u226570%",
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 16,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "vector(1)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "MACHINE-ASSISTED",
+      "description": "target \u226550%",
+      "gridPos": {
+        "h": 3,
+        "w": 4,
+        "x": 20,
+        "y": 2
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "vector(1)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "barchart",
+      "title": "\ud83d\udcca Observability Coverage Trend",
+      "description": "by coverage KPI, target \u226590% (tracing \u226570%)",
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 0,
+        "y": 5
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "vector(1)",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "orientation": "horizontal"
+      }
+    },
+    {
+      "id": 9,
+      "type": "piechart",
+      "title": "\ud83d\udd04 Resolution & Automation Mix",
+      "description": "Fully-auto / machine-assisted / agentic / manual",
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 12,
+        "y": 5
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "vector(1)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "barchart",
+      "title": "\ud83d\udd0d Recurring Incident Pareto",
+      "description": "top root causes \u2192 problem candidates",
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 0,
+        "y": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "vector(1)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "type": "table",
+      "title": "\ud83d\udccb SLA Breach by Support Group",
+      "description": "breaches & MTTR",
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 12,
+        "y": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "vector(1)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "\ud83d\udcc8 Capacity Trend",
+      "description": "vs threshold - Order cluster \u2192 saturation ~5 wks",
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 0,
+        "y": 13
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "process_resident_memory_bytes / 1024 / 1024",
+          "legendFormat": "Memory",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "type": "table",
+      "title": "\ud83e\udd16 Automation Opportunities",
+      "description": "repetitive toil \u2192 agentic AI",
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 12,
+        "y": 13
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "vector(1)",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "type": "text",
+      "title": "\ud83d\udcdd Improvement Backlog",
+      "description": "prioritized",
+      "gridPos": {
+        "h": 4,
+        "w": 24,
+        "x": 0,
+        "y": 17
+      },
+      "options": {
+        "mode": "html",
+        "content": "\n            <ul style=\"color:#ccc;font-size:14px;line-height:1.8;\">\n                <li>Onboard RUM/synthetic (coverage gap)</li>\n                <li>Order DB pool autoscale + self-heal</li>\n                <li>Alert de-dup tuning (Moogsoft)</li>\n                <li>Partner API telemetry onboarding</li>\n            </ul>\n            <p style=\"font-size:12px;color:#888;margin-top:10px;\">Source: Manual \u00b7 AIOps recommendations</p>\n            "
+      }
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "tags": [
+    "sre",
+    "reliability",
+    "analytics"
+  ],
+  "refresh": "1h"
+}
