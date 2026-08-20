@@ -1,5 +1,5 @@
 {
-  "title": "Flight Booking \u2014 L2: Maturity Scorecard",
+  "title": "Flight Booking \u2014 Leadership L2: Maturity Scorecard (REAL DATA)",
   "uid": "flight-booking-leadership-l2-real",
   "version": 1,
   "schemaVersion": 39,
@@ -17,14 +17,14 @@
         "x": 0,
         "y": 0
       },
-      "id": 1,
       "options": {
         "mode": "html",
-        "content": "<div style=\"display:flex;gap:10px;padding:10px;background:#1a1a1a;border-radius:4px;\">\n                <a href=\"/d/flight-booking-leadership-l1-real\" style=\"padding:8px 16px;background:#555;color:#fff;border-radius:4px;cursor:pointer;text-decoration:none;\">L1</a>\n                <a href=\"/d/flight-booking-leadership-l2-real\" style=\"padding:8px 16px;background:#ff9800;color:#000;border-radius:4px;cursor:pointer;text-decoration:none;\">L2</a>\n                <a href=\"/d/flight-booking-leadership-l3-real\" style=\"padding:8px 16px;background:#555;color:#000;border-radius:4px;cursor:pointer;text-decoration:none;\">L3</a>\n            </div>"
-      }
+        "content": "\n            <div style=\"display:flex;gap:10px;align-items:center;padding:10px;background:#1a1a1a;border-radius:4px;border:1px solid #333;\">\n                <a href=\"/d/flight-booking-leadership-l1-real\" style=\"padding:8px 16px;background:#555;color:#fff;border-radius:4px;cursor:pointer;text-decoration:none;\">L1: Executive</a>\n                <a href=\"/d/flight-booking-leadership-l2-real\" style=\"padding:8px 16px;background:#ff9800;color:#000;border-radius:4px;cursor:pointer;text-decoration:none;\">L2: Maturity</a>\n                <a href=\"/d/flight-booking-leadership-l3-real\" style=\"padding:8px 16px;background:#555;color:#000;border-radius:4px;cursor:pointer;text-decoration:none;\">L3: Operations</a>\n            </div>\n            "
+      },
+      "id": 1
     },
     {
-      "id": 1,
+      "id": 2,
       "type": "text",
       "gridPos": {
         "h": 1,
@@ -34,15 +34,15 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "# L2: Maturity Scorecard (DIRECT METRICS)"
+        "content": "# Leadership \u2014 Maturity Scorecard (REAL DATA)"
       }
     },
     {
-      "id": 2,
-      "type": "stat",
-      "title": "AVAILABILITY (%)",
+      "id": 3,
+      "type": "gauge",
+      "title": "Overall maturity score",
       "gridPos": {
-        "h": 4,
+        "h": 5,
         "w": 6,
         "x": 0,
         "y": 2
@@ -53,34 +53,45 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "servicenow_availability_percentage",
+          "expr": "(servicenow_availability_percentage / 100) * 5",
           "refId": "A"
         }
       ],
       "fieldConfig": {
         "defaults": {
+          "unit": "none",
+          "min": 0,
+          "max": 5,
           "color": {
-            "mode": "fixed",
-            "fixedColor": "#4caf50"
+            "mode": "thresholds"
           },
-          "unit": "short"
-        }
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 2
+              },
+              {
+                "color": "green",
+                "value": 4
+              }
+            ]
+          }
         }
       }
     },
     {
-      "id": 3,
-      "type": "stat",
-      "title": "OPEN INCIDENTS",
+      "id": 4,
+      "type": "barchart",
+      "title": "Score by platform dimension",
       "gridPos": {
-        "h": 4,
-        "w": 6,
+        "h": 5,
+        "w": 18,
         "x": 6,
         "y": 2
       },
@@ -90,73 +101,23 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "servicenow_major_incidents_open",
+          "expr": "up",
           "refId": "A"
         }
       ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#f44336"
-          },
-          "unit": "short"
-        }
-      },
       "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
-      }
-    },
-    {
-      "id": 4,
-      "type": "stat",
-      "title": "CRITICAL ALERTS",
-      "gridPos": {
-        "h": 4,
-        "w": 6,
-        "x": 12,
-        "y": 2
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "servicenow_critical_alerts",
-          "refId": "A"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#ff9800"
-          },
-          "unit": "short"
-        }
-      },
-      "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
+        "orientation": "horizontal"
       }
     },
     {
       "id": 5,
-      "type": "stat",
-      "title": "DEGRADED FEEDS",
+      "type": "barchart",
+      "title": "Coverage vs Effectiveness",
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 18,
-        "y": 2
+        "w": 12,
+        "x": 0,
+        "y": 7
       },
       "targets": [
         {
@@ -164,36 +125,23 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "servicenow_feeds_degraded",
+          "expr": "up",
           "refId": "A"
         }
       ],
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "fixed",
-            "fixedColor": "#999"
-          },
-          "unit": "short"
-        }
-      },
       "options": {
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        }
+        "orientation": "horizontal"
       }
     },
     {
       "id": 6,
       "type": "timeseries",
-      "title": "System Health Trend",
+      "title": "Maturity trend (Reactive \u2192 Proactive \u2192 Predictive)",
       "gridPos": {
         "h": 4,
         "w": 12,
-        "x": 0,
-        "y": 6
+        "x": 12,
+        "y": 7
       },
       "targets": [
         {
@@ -201,21 +149,21 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "servicenow_availability_percentage",
-          "legendFormat": "Availability %",
+          "expr": "(servicenow_availability_percentage / 100) * 5",
+          "legendFormat": "Maturity",
           "refId": "A"
         }
       ]
     },
     {
       "id": 7,
-      "type": "timeseries",
-      "title": "Incidents Trend",
+      "type": "table",
+      "title": "KPI detail \u2014 benchmark vs actual",
       "gridPos": {
-        "h": 4,
-        "w": 12,
-        "x": 12,
-        "y": 6
+        "h": 5,
+        "w": 24,
+        "x": 0,
+        "y": 11
       },
       "targets": [
         {
@@ -223,27 +171,27 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "servicenow_major_incidents_open",
-          "legendFormat": "Major Incidents",
+          "expr": "up",
+          "format": "table",
+          "instant": true,
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "servicenow_p1_incidents",
-          "legendFormat": "P1 Incidents",
-          "refId": "B"
         }
       ]
     }
   ],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "name": "Environment",
+        "type": "custom",
+        "query": "dev"
+      }
+    ]
   },
   "tags": [
-    "leadership"
+    "leadership",
+    "maturity",
+    "real-data"
   ],
   "refresh": "1h"
 }
