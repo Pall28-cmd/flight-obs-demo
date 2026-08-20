@@ -140,7 +140,7 @@ services:
       - loki
       - jaeger
       
-   servicenow-itom-exporter:
+  servicenow-itom-exporter:
     build:
       context: ./servicenow-itom-exporter
       dockerfile: Dockerfile
