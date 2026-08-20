@@ -56,3 +56,14 @@ scrape_configs:
           environment: dev
           tier: application
           business_service: payment
+
+  - job_name: "servicenow-itom"
+    static_configs:
+      - targets: ["servicenow-itom-exporter:9095"]
+        labels:
+          environment: dev
+          service_type: itom
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    metrics_path: "/metrics"
+       
