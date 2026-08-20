@@ -139,6 +139,25 @@ services:
       - prometheus
       - loki
       - jaeger
+      
+   servicenow-itom-exporter:
+    build:
+      context: ./servicenow-itom-exporter
+      dockerfile: Dockerfile
+    container_name: servicenow-itom-exporter
+    ports:
+      - "9095:9095"
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=false
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9095/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # ---------------------------------------------------------------------
   # Continuous background traffic so dashboards aren't empty on first run
