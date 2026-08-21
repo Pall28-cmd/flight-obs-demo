@@ -7,3 +7,9 @@ opentelemetry-sdk==1.25.0
 opentelemetry-instrumentation-fastapi==0.46b0
 opentelemetry-instrumentation-requests==0.46b0
 opentelemetry-exporter-otlp-proto-http==1.25.0
+prometheus-client>=0.14.0
+opentelemetry-api>=1.15.0
+opentelemetry-sdk>=1.15.0
+opentelemetry-exporter-jaeger>=1.15.0
+opentelemetry-instrumentation-flask>=0.36b0
+opentelemetry-instrumentation-requests>=0.36b0
