@@ -1,0 +1,48 @@
+groups:
+  - name: spog_recording_rules
+    interval: 30s
+    rules:
+
+      # ========================================================================
+      # DASHBOARD REQUIRED: IT Health Score (0-100)
+      # ========================================================================
+      - record: spog:it_health_score
+        expr: |
+          100 * min without (service_name) (
+            avg without (status_code) (svc:availability:ratio5m)
+          )
+
+      # ========================================================================
+      # DASHBOARD REQUIRED: Service Availability Ratio 5m
+      # ========================================================================
+      - record: svc:availability:ratio5m
+        expr: |
+          (1 - sum(rate(http_requests_total{status=~"5.."}[5m])) by (service_name, environment) / clamp_min(sum(rate(http_requests_total[5m])) by (service_name, environment), 0.001))
+
+      # ========================================================================
+      # DASHBOARD REQUIRED: Service P95 Latency 5m
+      # ========================================================================
+      - record: svc:latency_p95:seconds5m
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service, environment))
+
+      # ========================================================================
+      # Additional Recording Rules for Dashboard Performance
+      # ========================================================================
+      - record: svc:error_rate:5m
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m])) by (service_name, environment)
+          /
+          sum(rate(http_requests_total[5m])) by (service_name, environment)
+
+      - record: svc:request_rate:5m
+        expr: |
+          sum(rate(http_requests_total[5m])) by (service_name, environment)
+
+      - record: svc:latency_p50:seconds5m
+        expr: |
+          histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service, environment))
+
+      - record: svc:latency_p99:seconds5m
+        expr: |
+          histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service, environment))

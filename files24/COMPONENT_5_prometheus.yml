@@ -1,0 +1,98 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: flight-booking-local
+    environment: dev
+
+rule_files:
+  - /etc/prometheus/alert_rules.yml
+  - /etc/prometheus/recording_rules.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+# ============================================================================
+# SCRAPE CONFIGS: Services to Monitor
+# ============================================================================
+
+scrape_configs:
+  
+  # ========================================================================
+  # BOOKING SERVICE - Port 8002
+  # ========================================================================
+  - job_name: "booking-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["booking-service:8002"]
+        labels:
+          service_name: booking-service
+          environment: dev
+          tier: application
+          business_service: booking
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+
+  # ========================================================================
+  # PAYMENT SERVICE - Port 8003
+  # ========================================================================
+  - job_name: "payment-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["payment-service:8003"]
+        labels:
+          service_name: payment-service
+          environment: dev
+          tier: application
+          business_service: payment
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+
+  # ========================================================================
+  # FLIGHT-SEARCH SERVICE - Port 8001
+  # ========================================================================
+  - job_name: "flight-search-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["flight-search-service:8001"]
+        labels:
+          service_name: flight-search-service
+          environment: dev
+          tier: frontend
+          business_service: flight-search
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+
+  # ========================================================================
+  # SERVICENOW ITOM EXPORTER - Port 9095
+  # ========================================================================
+  - job_name: "servicenow-itom"
+    metrics_path: "/metrics"
+    scrape_interval: 30s
+    scrape_timeout: 10s
+    static_configs:
+      - targets: ["servicenow-itom-exporter:9095"]
+        labels:
+          service_type: itom
+          environment: dev
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+
+  # ========================================================================
+  # PROMETHEUS SELF-MONITORING
+  # ========================================================================
+  - job_name: "prometheus"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["localhost:9090"]
+        labels:
+          environment: dev
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance

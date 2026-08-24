@@ -1,0 +1,250 @@
+version: "3.9"
+
+services:
+
+  # ============================================================================
+  # APPLICATION MICROSERVICES
+  # ============================================================================
+
+  flight-search-service:
+    build: ./services/flight-search
+    container_name: flight-search-service
+    ports:
+      - "8001:8001"
+    expose:
+      - "8001"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318/v1/traces
+      - ENVIRONMENT=dev
+    depends_on:
+      - otel-collector
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - observability
+
+  booking-service:
+    build: ./services/booking
+    container_name: booking-service
+    ports:
+      - "8002:8002"
+    expose:
+      - "8002"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318/v1/traces
+      - PAYMENT_SERVICE_URL=http://payment-service:8003
+      - ENVIRONMENT=dev
+    depends_on:
+      - otel-collector
+      - payment-service
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - observability
+
+  payment-service:
+    build: ./services/payment
+    container_name: payment-service
+    ports:
+      - "8003:8003"
+    expose:
+      - "8003"
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318/v1/traces
+      - ENVIRONMENT=dev
+    depends_on:
+      - otel-collector
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - observability
+
+  nginx-gateway:
+    image: nginx:alpine
+    container_name: nginx-gateway
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      - flight-search-service
+      - booking-service
+      - payment-service
+    networks:
+      - observability
+
+  # ============================================================================
+  # OBSERVABILITY STACK
+  # ============================================================================
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.104.0
+    container_name: otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    depends_on:
+      - jaeger
+    networks:
+      - observability
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: jaeger
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686"
+    networks:
+      - observability
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - ./prometheus/recording_rules.yml:/etc/prometheus/recording_rules.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - flight-search-service
+      - booking-service
+      - payment-service
+    networks:
+      - observability
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: alertmanager
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    ports:
+      - "9093:9093"
+    networks:
+      - observability
+
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: loki
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    ports:
+      - "3100:3100"
+    networks:
+      - observability
+
+  promtail:
+    image: grafana/promtail:3.0.0
+    container_name: promtail
+    volumes:
+      - ./promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - loki
+    networks:
+      - observability
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/provisioning/dashboards/json/flight_booking_home_landing.json
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - loki
+      - jaeger
+    networks:
+      - observability
+
+  servicenow-itom-exporter:
+    build:
+      context: ./servicenow-itom-exporter
+      dockerfile: Dockerfile
+    container_name: servicenow-itom-exporter
+    ports:
+      - "9095:9095"
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=false
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9095/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - observability
+
+  # ============================================================================
+  # CONTINUOUS TRAFFIC GENERATOR
+  # ============================================================================
+  # Generates realistic synthetic workload to ensure metrics flow
+  # continuously to dashboards without manual intervention
+  
+  load-generator:
+    build: ./load-generator
+    container_name: load-generator
+    depends_on:
+      - nginx-gateway
+      - booking-service
+      - payment-service
+      - flight-search-service
+    networks:
+      - observability
+    environment:
+      - BASE_URL=http://nginx-gateway:8000
+
+# ============================================================================
+# VOLUMES (for data persistence)
+# ============================================================================
+
+volumes:
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  loki_data:
+    driver: local
+
+# ============================================================================
+# NETWORKS
+# ============================================================================
+
+networks:
+  observability:
+    driver: bridge
