@@ -1,8 +1,9 @@
 global:
-  scrape_interval: 5s
-  evaluation_interval: 5s
+  scrape_interval: 15s
+  evaluation_interval: 15s
   external_labels:
     cluster: flight-booking-local
+    environment: dev
 
 rule_files:
   - /etc/prometheus/alert_rules.yml
@@ -13,33 +14,17 @@ alerting:
     - static_configs:
         - targets: ["alertmanager:9093"]
 
-# ---------------------------------------------------------------------------
-# TARGET LABELS -- this is what makes the $service and $environment dashboard
-# variables work.
-#
-# `service_name` and `environment` are attached here at scrape time rather than
-# inside the application code. Prometheus target labels win over labels exported
-# by the app: if a service also emitted `service_name` on a metric, Prometheus
-# would rename the app's copy to `exported_service_name` and every
-# `service_name=~"$service"` selector in the dashboard would silently return
-# nothing. Defining topology once, here, keeps a single source of truth and
-# applies it uniformly to every metric a target exposes -- including the
-# python_* and process_* metrics prometheus_client adds for free.
-#
-# To add a second environment, duplicate a job block with a different
-# `environment` value and new targets.
-# ---------------------------------------------------------------------------
-scrape_configs:
-  - job_name: "flight-search-service"
-    static_configs:
-      - targets: ["flight-search-service:8001"]
-        labels:
-          service_name: flight-search-service
-          environment: dev
-          tier: frontend
-          business_service: flight-search
+# ============================================================================
+# SCRAPE CONFIGS: Services to Monitor
+# ============================================================================
 
+scrape_configs:
+  
+  # ========================================================================
+  # BOOKING SERVICE - Port 8002
+  # ========================================================================
   - job_name: "booking-service"
+    metrics_path: "/metrics"
     static_configs:
       - targets: ["booking-service:8002"]
         labels:
@@ -47,8 +32,15 @@ scrape_configs:
           environment: dev
           tier: application
           business_service: booking
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
 
+  # ========================================================================
+  # PAYMENT SERVICE - Port 8003
+  # ========================================================================
   - job_name: "payment-service"
+    metrics_path: "/metrics"
     static_configs:
       - targets: ["payment-service:8003"]
         labels:
@@ -56,14 +48,51 @@ scrape_configs:
           environment: dev
           tier: application
           business_service: payment
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
 
+  # ========================================================================
+  # FLIGHT-SEARCH SERVICE - Port 8001
+  # ========================================================================
+  - job_name: "flight-search-service"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets: ["flight-search-service:8001"]
+        labels:
+          service_name: flight-search-service
+          environment: dev
+          tier: frontend
+          business_service: flight-search
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+
+  # ========================================================================
+  # SERVICENOW ITOM EXPORTER - Port 9095
+  # ========================================================================
   - job_name: "servicenow-itom"
+    metrics_path: "/metrics"
+    scrape_interval: 30s
+    scrape_timeout: 10s
     static_configs:
       - targets: ["servicenow-itom-exporter:9095"]
         labels:
-          environment: dev
           service_type: itom
-    scrape_interval: 30s
-    scrape_timeout: 10s
+          environment: dev
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+
+  # ========================================================================
+  # PROMETHEUS SELF-MONITORING
+  # ========================================================================
+  - job_name: "prometheus"
     metrics_path: "/metrics"
-       
+    static_configs:
+      - targets: ["localhost:9090"]
+        labels:
+          environment: dev
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
